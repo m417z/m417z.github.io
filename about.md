@@ -4,12 +4,4 @@ title: About
 permalink: /about/
 ---
 
-Some information about you!
-
-### More Information
-
-A place to include any other types of information that you'd like to include about yourself.
-
-### Contact me
-
-[email@domain.com](mailto:email@domain.com)
+Hi, I'm Michael Maltsev, also known as m417z. I'm interested in reverse engineering and vulnerability research of any kind, from the low level world of operating systems to the high level world of front-end web development.
