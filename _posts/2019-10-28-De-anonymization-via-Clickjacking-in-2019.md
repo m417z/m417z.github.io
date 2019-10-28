@@ -126,7 +126,7 @@ loadFacebookDemoData();
 
 # Initial Motivation - Google YOLO
 
-My journey began when I read the excellent [Google YOLO blog post](https://web.archive.org/web/20190623164409/https://blog.innerht.ml/google-yolo/) by [@filedescriptor](https://twitter.com/filedescriptor) about a clickjacking vulnerability of the Google YOLO (You Only Login Once) service, a web widget that provides an embeddable one-click login on websites. I highly recommend that you read the blog post, which includes an interactive demonstration of the clickjacking technique.
+My journey began when I read the excellent [Google YOLO blog post](https://blog.innerht.ml/google-yolo/) by [@filedescriptor](https://twitter.com/filedescriptor) about a clickjacking vulnerability of the Google YOLO (You Only Login Once) service, a web widget that provides an embeddable one-click login on websites. I highly recommend that you read the blog post, which includes an interactive demonstration of the clickjacking technique.
 
 The blog post discusses how the widget can be used as a privacy threat, explaining that it’s possible to build a website with the Google YOLO widget and disguise the widget to make it look like a harmless button. When the seemingly harmless button is clicked, the victim unknowingly logs into the website with his Google account, and thus passes his identity, including his full name and email address, to the owner of the website.
 
