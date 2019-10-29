@@ -193,6 +193,8 @@ Looking at the **X-Frame-Options** header, I thought, why not make a similar pre
 
 Until browsers implement such a protection, website owners have only one option: to require extra user interaction, possibly with an isolated popup window. We’ve seen that Facebook does this with the Like widget, but only for suspicious websites hosting the widget. Apparently Facebook values users’ usability more than their privacy.
 
+**Update:** As it turns out, Chrome provides a way for widget owners to detect clickjacking with the [Intersection Observer v2](https://www.chromestatus.com/feature/5878481493688320) feature. The feature is enabled by default since Chrome 74, released in April 2019. Unfortunately, only Chrome imlpements it at the moment, and it's not as easy to use as just adding a header to the page serving the widget. See Google's [Trust is Good, Observation is Better](https://developers.google.com/web/updates/2019/02/intersectionobserver-v2) article for more details.
+
 # Clickjacking Mitigation for Users
 
 Having tried several solutions, I came to the conclusion that blocking third party cookies is the best mitigation for clickjacking. It doesn’t prevent clickjacking per se, but since the embedded frame won’t be receiving the visitor’s cookies, the attacker won’t be able to do much harm.
