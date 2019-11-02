@@ -1,6 +1,7 @@
 ---
 layout: post
 title: De-anonymization via Clickjacking in 2019
+image: /images/De-anonymization-via-Clickjacking-in-2019/Facebook-Comments-widget-masked-as-CAPTCHA.png
 ---
 
 This blog post is about my journey to understand the current practice of de-anonymization via the clickjacking technique whereby a malicious website is able to uncover the identity of a visitor, including his full name and possibly other personal information. I don’t present any new information here that isn’t already publicly available, but I do look at how easy it is to compromise a visitor’s privacy and reveal his identity, even when he adheres to security best practices and uses an up-to-date browser and operating system.
