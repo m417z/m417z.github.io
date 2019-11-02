@@ -7,7 +7,7 @@ Category: Reverse
 Score: 126 (solved by 38 teams)  
 Original description: RealWorld Slide Puzzle with modern cross-platform expressive and flexible UI technology.
 
-![_config.yml]({{ site.baseurl }}/images/2019-9-16-Slide-Puzzle-Real-World-CTF-Quals-2019/puzzle.png)
+![_config.yml]({{ site.baseurl }}/images/Slide-Puzzle-Real-World-CTF-Quals-2019/puzzle.png)
 
 # Introduction
 

@@ -99,7 +99,7 @@
 			localStorage.setItem('saw_fake_captcha', parseInt((localStorage.getItem('saw_fake_captcha') || '0'), 10) + 1);
 		} catch (e) {}
 		
-		var fbUrlId = new Date().valueOf().toString(36) + Math.random().toString(36).substr(2)
+		var fbUrlId = new Date().valueOf().toString(36) + Math.random().toString(36).substr(2);
 		var fbUrl = "https://www.facebook.com/v3.2/plugins/comments.php" +
 			"?app_id=113869198637480" +
 			"&channel=https%3A%2F%2Fstaticxx.facebook.com%2Fconnect%2Fxd_arbiter%2Fr%2Fd_vbiawPdxB.js%3Fversion%3D44%23cb%3Df25d2ed39becd8%26domain%3Ddevelopers.facebook.com%26origin%3Dhttps%253A%252F%252Fdevelopers.facebook.com%252Ff371be96df16ee8%26relation%3Dparent.parent" +
