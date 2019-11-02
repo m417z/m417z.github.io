@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Slide Puzzle - Real World CTF Quals 2019
+image: /images/Slide-Puzzle-Real-World-CTF-Quals-2019/puzzle.png
 ---
 
 Category: Reverse  
