@@ -1,6 +1,7 @@
 ---
 layout: post
 title: The De-anonymization of the Technion Confessions Admin
+image: /images/The-De-anonymization-of-the-Technion-Confessions-Admin/Technion-Confessions.png
 ---
 
 This is a story about [Technion Confessions](https://www.facebook.com/TechnionConfessions/) which begins with me being curious about the identity of the Technion Confessions admin, and ends up with me satisfying my curiosity by using an XSS vulnerability in the [Technion course registration system](https://ug3.technion.ac.il/rishum/) and social engineering.
