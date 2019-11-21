@@ -214,6 +214,10 @@ The attack worked as intended. My server logged the admin's cookies first, indic
 
 ![Great success!]({{ site.baseurl }}/images/The-De-anonymization-of-the-Technion-Confessions-Admin/Great-success.png)
 
+# So, Who's the Admin?
+
+Remember PODCASAT, the podcast hosted by Or and Shani? It was since renamed to YESH TSIYUNIM, and I was invited by Or to tell the story. You can listen to the episode [here](http://bit.ly/yesh-tziunim-2-2-webplayer) (Hebrew), and you might as well find out who's the de-anonymized admin.
+
 # Summary and Possible Mitigations
 
 **tl;dr —** This is a story about how I found and exploited an XSS vulnerability in the Technion course registration system to craft a page that revealed the victim's identity. Through a confession, I convinced the Technion Confessions page admin to visit that page and successfully revealed his identity.
