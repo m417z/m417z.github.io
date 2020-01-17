@@ -120,7 +120,7 @@
 		var hiddenOrUnfocusedCount = 1;
 		function checkCommentsTimeoutFunc() {
 			if (document.hasFocus() && document.activeElement.isEqualNode(fakeCaptchaFrame)) {
-				document.getElementById('fake-captcha-caret').style.display = null;
+				document.getElementById('fake-captcha-caret').style.removeProperty('display');
 			} else {
 				document.getElementById('fake-captcha-caret').style.display = 'none';
 			}
@@ -180,7 +180,7 @@
 		if (getQueryParam('demo') !== null) {
 			var fakeCaptchaRevealCheckboxLabel = document.getElementById('clickjacking-reveal-checkbox-label');
 			var fakeCaptchaRevealCheckbox = document.getElementById('clickjacking-reveal-checkbox');
-			fakeCaptchaRevealCheckboxLabel.style.display = null;
+			fakeCaptchaRevealCheckboxLabel.style.removeProperty('display');
 			fakeCaptchaRevealCheckboxLabel.onclick = function () {
 				var checked = fakeCaptchaRevealCheckbox.checked;
 				var clickjackingCover = document.getElementsByClassName('clickjacking-cover');
