@@ -25,7 +25,7 @@ Currently a security researcher at ZecOps.
 ### Software
 
 * [Unchecky](https://unchecky.com/) - A tool for Windows that automatically unchecks unrelated offers to keep potentially unwanted programs out of the computer. Was acquired by Reason Cybersecurity.
-* [7+ Taskbar Tweaker](https://tweaker.rammichael.com/) - Windows Taskbar Customization Tool.
+* [7+ Taskbar Tweaker](https://tweaker.rammichael.com/) - A Windows taskbar customization tool.
 
 ### Other projects
 
