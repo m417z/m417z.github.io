@@ -31,4 +31,4 @@ Currently a security researcher at ZecOps.
 
 * [BitSniff](https://m417z.com/bitsniff/) - A tool for detecting Bitcoin-related communications in encrypted traffic, developed with [Niko Kudriastev](https://79jke.github.io/) during the [Bitcoin emBassy Hackathon](https://www.meetup.com/bitcoin-il/events/264327474/). [Technical details](https://79jke.github.io/BitSniff/), [presentation](https://www.youtube.com/watch?v=9S8xsDq3PTU).
 * Contributor of the [MinHook](https://github.com/m417z/minhook) hooking library for Windows.
-* [Microsoft Patch Tuesday Countdown]([https://m417z.com/ms-patch-tuesday/](https://m417z.com/ms-patch-tuesday/)).
+* [Microsoft Patch Tuesday Countdown](https://m417z.com/ms-patch-tuesday/).
