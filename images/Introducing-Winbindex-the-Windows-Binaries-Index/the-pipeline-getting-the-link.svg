@@ -1,0 +1,110 @@
+<svg height="64" width="976" xmlns="http://www.w3.org/2000/svg">
+    <style>line, path, circle,rect,polygon {
+                          stroke: black;
+                          stroke-width: 2;
+                          stroke-opacity: 1;
+                          fill-opacity: 1;
+                          stroke-linecap: round;
+                          stroke-linejoin: miter;
+                        }
+
+                    text {
+                        fill: black;
+                        }
+                        rect.backdrop{
+                            stroke: none;
+                            fill: white;
+                        }
+                        .broken{
+                            stroke-dasharray: 8;
+                        }
+                        .filled{
+                            fill: black;
+                        }
+                        .bg_filled{
+                            fill: white;
+                        }
+                        .nofill{
+                            fill: white;
+                        }
+
+                        text {
+                         font-family: monospace;
+                         font-size: 14px;
+                        }
+
+                        .end_marked_arrow{
+                            marker-end: url(#arrow);
+                         }
+                        .start_marked_arrow{
+                            marker-start: url(#arrow);
+                         }
+
+                        .end_marked_diamond{
+                            marker-end: url(#diamond);
+                         }
+                        .start_marked_diamond{
+                            marker-start: url(#diamond);
+                         }
+
+                        .end_marked_circle{
+                            marker-end: url(#circle);
+                         }
+                        .start_marked_circle{
+                            marker-start: url(#circle);
+                         }
+
+                        .end_marked_open_circle{
+                            marker-end: url(#open_circle);
+                         }
+                        .start_marked_open_circle{
+                            marker-start: url(#open_circle);
+                         }
+
+                        .end_marked_big_open_circle{
+                            marker-end: url(#big_open_circle);
+                         }
+                        .start_marked_big_open_circle{
+                            marker-start: url(#big_open_circle);
+                         }
+
+                         
+                        </style>
+    <defs>
+        <marker id="arrow" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="4" refY="2" viewBox="-2 -2 8 8">
+            <polygon points="0,0 0,4 4,2 0,0"></polygon>
+        </marker>
+        <marker id="diamond" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="4" refY="2" viewBox="-2 -2 8 8">
+            <polygon points="0,2 2,0 4,2 2,4 0,2"></polygon>
+        </marker>
+        <marker id="circle" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="4" refY="4" viewBox="0 0 8 8">
+            <circle class="filled" cx="4" cy="4" r="2"></circle>
+        </marker>
+        <marker id="open_circle" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="4" refY="4" viewBox="0 0 8 8">
+            <circle class="bg_filled" cx="4" cy="4" r="2"></circle>
+        </marker>
+        <marker id="big_open_circle" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="4" refY="4" viewBox="0 0 8 8">
+            <circle class="bg_filled" cx="4" cy="4" r="3"></circle>
+        </marker>
+    </defs>
+    <rect class="backdrop" height="64" width="976" x="0" y="0"></rect>
+    <rect class="solid nofill " height="32" rx="4" width="216" x="4" y="8"></rect>
+    <text class="" x="18" y="28">Microsoft</text>
+    <text class="" x="98" y="28">update</text>
+    <text class="" x="154" y="28">package</text>
+    <rect class="solid nofill " height="32" rx="4" width="104" x="316" y="8"></rect>
+    <text class="" x="330" y="28">VirusTotal</text>
+    <rect class="solid nofill " height="32" rx="4" width="208" x="628" y="8"></rect>
+    <text class="" x="642" y="28">Microsoft</text>
+    <text class="" x="722" y="28">Symbol</text>
+    <text class="" x="778" y="28">Server</text>
+    <text class="" x="242" y="12">SHA256</text>
+    <line class="solid end_marked_arrow " x1="232" x2="304" y1="24" y2="24"></line>
+    <text class="" x="442" y="12">timeStamp,</text>
+    <text class="" x="530" y="12">imageSize</text>
+    <line class="solid end_marked_arrow " x1="432" x2="616" y1="24" y2="24"></line>
+    <line class="solid end_marked_arrow " x1="848" x2="872" y1="24" y2="24"></line>
+    <text class="" x="882" y="28">The</text>
+    <text class="" x="914" y="28">PE</text>
+    <text class="" x="938" y="28">file</text>
+</svg>
