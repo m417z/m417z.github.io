@@ -134,14 +134,14 @@ There are files of various types in the update packages, including non-PE files 
 
 Querying VirusTotal is quite simple, as I demonstrated with the Python script in the previous section about VirusTotal. The problem was that I needed to query information about 134,515 files, which is not a small amount. I was afraid of a strict rate limiting, but fortunately, the rate limiting wasn't so strict. After a while I got a response similar to the following:
 
-```
+{% highlight json %}
 {
     "error": {
         "code": "TooManyRequestsError",
         "message": "More than 1000 requests from 66.249.66.153 within a hour"
     }
 }
-```
+{% endhighlight %}
 
 So no more than 1000 requests within an hour, which means 5.5 days of downloading. I could use more computers, but that would be inconvenient. Even though it's not too bad, I was uncomfortable seeing my script waiting every hour for the next quota of 1000 requests, so I used [PyMultitor](https://github.com/realgam3/pymultitor), the Python Multi Threaded Tor Proxy tool created by [Tomer Zait](https://twitter.com/realgam3). I heard about the tool a while ago, and finally had the perfect use case for it. I was pleasantly surprised how stable and easy to use it is (stability should also be attributed to the Tor project). With PyMultitor, I was able to reduce the time to 3 days of downloading.
 
