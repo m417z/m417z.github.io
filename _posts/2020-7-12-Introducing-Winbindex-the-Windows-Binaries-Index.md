@@ -75,7 +75,7 @@ This means that all we need to retrieve the file from the Microsoft Symbol Serve
 
 In addition, if the file was scanned with VirusTotal before, the information can be retrieved by providing the file hash. That means that for each file previously scanned by VirusTotal, the SHA256 hash is enough to deduce the correct path on the Microsoft Symbol Server and download the file.
 
-![The pipeline towards getting the link]({{ site.baseurl }}/images/the-pipeline-getting-the-link.svg)
+![The pipeline towards getting the link]({{ site.baseurl }}/images/Introducing-Winbindex-the-Windows-Binaries-Index/the-pipeline-getting-the-link.svg)
 
 Back to our example, the `a43e5ad1d2920a0eca734835c83c96117f27f2880f8ff9e2088cb8c9447b5af4` hash [can be found on VirusTotal](https://www.virustotal.com/gui/file/a43e5ad1d2920a0eca734835c83c96117f27f2880f8ff9e2088cb8c9447b5af4/details), and the parameters that we need are the creation time:
 
