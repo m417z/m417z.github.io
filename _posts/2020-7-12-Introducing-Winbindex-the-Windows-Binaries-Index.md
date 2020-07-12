@@ -4,8 +4,6 @@ title: Introducing Winbindex - the Windows Binaries Index
 image: /images/Introducing-Winbindex-the-Windows-Binaries-Index/Winbindex-Website.png
 ---
 
-# tl;dr
-
 I indexed all Windows files which appear in Windows update packages, and created [a website](https://m417z.com/winbindex/) which allows to quickly view information about the files and download some of them from Microsoft servers. The files that can be downloaded are executable files (currently exe, dll and sys files). Read on for further information.
 
 ![The Winbindex Website]({{ site.baseurl }}/images/Introducing-Winbindex-the-Windows-Binaries-Index/Winbindex-Website.png)
