@@ -39,11 +39,6 @@ function isMobileOrTablet() {
 	return check;
 }
 
-function isFirefox() {
-	// https://stackoverflow.com/a/7000222
-	return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-}
-
 function addCaptchaFrame(id, demo) {
 	var iframe = document.createElement('iframe');
 	iframe.id = id;
@@ -117,19 +112,14 @@ try {
 if (getQueryParam('demo') !== null) {
 	addStyle('hideAllDivs', 'div { display: none; }');
 	addCaptchaFrame('captchaFrame', true);
-} else if (!sawCaptcha && !isMobileOrTablet() && !isFirefox()) {
-	// Note: We exclude Firefox as well since the Facebook sign in
-	// detection method doesn't work with it, and in any case
-	// Facebook's cookies are blocked with Firefox Enhanced
-	// Tracking Protection, which is on by default.
+} else if (!sawCaptcha && !isMobileOrTablet()) {
 	addStyle('hideAllDivs', 'div { display: none; }');
 	addStyle('hideAllIframes', 'iframe { display: none; }');
 	addCaptchaFrame('captchaFrame', false);
-	document.write('<script type="text/javascript"' +
-		' src="https://www.facebook.com/groups/118649778226975/user/731894030/"' +
-		' onload="onSignedIntoFacebook()"' +
-		' onerror="onNotSignedIntoFacebook()"' +
-		' async="async"></scr' + 'ipt>');
+	// There was some code here to detect whether the user
+	// is signed into Facebook, but it stopped working, just
+	// show the captcha to everybody.
+	onSignedIntoFacebook();
 }
 
 loadFacebookDemoData();
