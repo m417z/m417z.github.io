@@ -22,8 +22,9 @@ Hi, I'm Michael Maltsev, also known as m417z. I'm interested in reverse engineer
 
 ### Software
 
-* [Unchecky](https://unchecky.com/) - A tool for Windows that automatically unchecks unrelated offers to keep potentially unwanted programs out of the computer. Was acquired by Reason Cybersecurity.
+* [Windhawk](https://windhawk.net/) - The customization marketplace for Windows programs.
 * [7+ Taskbar Tweaker](https://tweaker.ramensoftware.com/) - A Windows taskbar customization tool.
+* [Unchecky](https://unchecky.com/) - A tool for Windows that automatically unchecks unrelated offers to keep potentially unwanted programs out of the computer. Was acquired by Reason Cybersecurity.
 * [Ramen Software](https://ramensoftware.com/) - More software for Windows.
 
 ### Other projects
