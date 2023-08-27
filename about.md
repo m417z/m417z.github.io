@@ -30,6 +30,7 @@ Hi, I'm Michael Maltsev, also known as m417z. I'm interested in reverse engineer
 ### Other projects
 
 * [Winbindex - The Windows Binaries Index](https://winbindex.m417z.com/) - An index of Windows binaries, including download links for executables such as exe, dll and sys files.
+* [NtDoc](https://ntdoc.m417z.com/) - Native API online documentation, based on the System Informer (formerly Process Hacker) [phnt headers](https://github.com/winsiderss/systeminformer/tree/master/phnt).
 * [BitSniff](https://m417z.com/bitsniff/) - A tool for detecting Bitcoin-related communications in encrypted traffic, developed with [Niko Kudriastev](https://79jke.github.io/) during the [Bitcoin emBassy Hackathon](https://www.meetup.com/bitcoin-il/events/264327474/). [Technical details](https://79jke.github.io/BitSniff/), [presentation](https://www.youtube.com/watch?v=9S8xsDq3PTU).
 * Contributor of the [MinHook](https://github.com/m417z/minhook) hooking library for Windows.
-* [Microsoft Patch Tuesday Countdown](https://m417z.com/ms-patch-tuesday/).
+* [Microsoft Patch Tuesday Countdown](https://patch-tuesday.m417z.com/).
