@@ -19,6 +19,7 @@ Hi, I'm Michael Maltsev, also known as m417z. I'm interested in reverse engineer
 ### Publications
 
 * [Paged Out!](https://pagedout.institute/) #2: C as a portable assembly - Porting 32-bit assembly code to 64-bit ([PDF](https://pagedout.institute/download/PagedOut_002_beta2.pdf), page 8).
+* [Paged Out!](https://pagedout.institute/) #3: winapiexec - Run WinAPI functions from the command line ([PDF](https://pagedout.institute/download/PagedOut_003_beta1.pdf), page 25).
 
 ### Software
 
