@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="en-US"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="profile" href="https://gmpg.org/xfn/11">
+
+
+ <title>SMBleedingGhost Writeup Part III: From Remote Read (SMBleed) to RCE - ZecOps Blog</title>
+<meta name="robots" content="index, follow">
+<meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<link rel="canonical" href="https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce/">
+<meta property="og:locale" content="en_US">
+<meta property="og:type" content="article">
+ 
+ <meta property="og:description" content="Introduction Previous SMBleedingGhost write-ups:&nbsp; Part I Part II Part III (this) In the previous part of the series, SMBleedingGhost Writeup Part II: Unauthenticated Memory Read – Preparing the Ground for an RCE, we described two techniques that allow us to read uninitialized memory from the pool buffers allocated by the SrvNetAllocateBuffer function of the srvnet.sys … SMBleedingGhost Writeup Part III: From Remote Read (SMBleed) to RCE Read More »">
+<meta property="og:url" content="https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce/">
+<meta property="og:site_name" content="ZecOps Blog">
+<meta property="article:published_time" content="2020-06-28T08:41:49+00:00">
+<meta property="article:modified_time" content="2020-06-29T08:20:55+00:00">
+<meta property="og:image" content="https://blog.zecops.com/wp-content/uploads/2020/06/smbleed-3.jpg">
+<meta property="og:image:width" content="2880">
+<meta property="og:image:height" content="1728">
+<meta name="twitter:card" content="summary_large_image">
+<script async="" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/get_counts"></script><script type="text/javascript" async="" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/insight.js"></script><script async="" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/5e08fc03de9d4c0012d1058c.js"></script><script type="text/javascript" async="" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/analytics.js"></script><script type="application/ld+json" class="yoast-schema-graph">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://blog.zecops.com/#organization","name":"ZecOps","url":"https://blog.zecops.com/","sameAs":[],"logo":{"@type":"ImageObject","@id":"https://blog.zecops.com/#logo","inLanguage":"en-US","url":"https://blog.zecops.com/wp-content/uploads/2019/01/zecops-logo.png","width":260,"height":80,"caption":"ZecOps"},"image":{"@id":"https://blog.zecops.com/#logo"}},{"@type":"WebSite","@id":"https://blog.zecops.com/#website","url":"https://blog.zecops.com/","name":"ZecOps Blog","description":"ZecOps Research Team","publisher":{"@id":"https://blog.zecops.com/#organization"},"potentialAction":[{"@type":"SearchAction","target":"https://blog.zecops.com/?s={search_term_string}","query-input":"required name=search_term_string"}],"inLanguage":"en-US"},{"@type":"ImageObject","@id":"https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce/#primaryimage","inLanguage":"en-US","url":"https://blog.zecops.com/wp-content/uploads/2020/06/smbleed-3.jpg","width":2880,"height":1728},{"@type":"WebPage","@id":"https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce/#webpage","url":"https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce/","name":"SMBleedingGhost Writeup Part III: From Remote Read (SMBleed) to RCE - ZecOps Blog","isPartOf":{"@id":"https://blog.zecops.com/#website"},"primaryImageOfPage":{"@id":"https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce/#primaryimage"},"datePublished":"2020-06-28T08:41:49+00:00","dateModified":"2020-06-29T08:20:55+00:00","inLanguage":"en-US","potentialAction":[{"@type":"ReadAction","target":["https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce/"]}]},{"@type":"Article","@id":"https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce/#article","isPartOf":{"@id":"https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce/#webpage"},"author":{"@id":"https://blog.zecops.com/#/schema/person/caf00b482877f6db964e26781da57248"},"headline":"SMBleedingGhost Writeup Part III: From Remote Read (SMBleed) to RCE","datePublished":"2020-06-28T08:41:49+00:00","dateModified":"2020-06-29T08:20:55+00:00","commentCount":0,"mainEntityOfPage":{"@id":"https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce/#webpage"},"publisher":{"@id":"https://blog.zecops.com/#organization"},"image":{"@id":"https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce/#primaryimage"},"articleSection":"vulnerabilities","inLanguage":"en-US","potentialAction":[{"@type":"CommentAction","name":"Comment","target":["https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce/#respond"]}]},{"@type":["Person"],"@id":"https://blog.zecops.com/#/schema/person/caf00b482877f6db964e26781da57248","name":"ZecOps Research Team","image":{"@type":"ImageObject","@id":"https://blog.zecops.com/#personlogo","inLanguage":"en-US","url":"https://secure.gravatar.com/avatar/91ca55e461911ff543c202cc7e0d253e?s=96&d=mm&r=g","caption":"ZecOps Research Team"}}]}</script>
+
+<link rel="dns-prefetch" href="https://fonts.googleapis.com/">
+<link rel="dns-prefetch" href="https://s.w.org/">
+<link rel="alternate" type="application/rss+xml" title="ZecOps Blog » Feed" href="https://blog.zecops.com/feed/">
+<link rel="alternate" type="application/rss+xml" title="ZecOps Blog » Comments Feed" href="https://blog.zecops.com/comments/feed/">
+<link rel="alternate" type="application/rss+xml" title="ZecOps Blog » SMBleedingGhost Writeup Part III: From Remote Read (SMBleed) to RCE Comments Feed" href="https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce/feed/">
+<script type="text/javascript">
+			window._wpemojiSettings = {"baseUrl":"https:\/\/s.w.org\/images\/core\/emoji\/12.0.0-1\/72x72\/","ext":".png","svgUrl":"https:\/\/s.w.org\/images\/core\/emoji\/12.0.0-1\/svg\/","svgExt":".svg","source":{"concatemoji":"https:\/\/blog.zecops.com\/wp-includes\/js\/wp-emoji-release.min.js?ver=5.4.1"}};
+			/*! This file is auto-generated */
+			!function(e,a,t){var r,n,o,i,p=a.createElement("canvas"),s=p.getContext&&p.getContext("2d");function c(e,t){var a=String.fromCharCode;s.clearRect(0,0,p.width,p.height),s.fillText(a.apply(this,e),0,0);var r=p.toDataURL();return s.clearRect(0,0,p.width,p.height),s.fillText(a.apply(this,t),0,0),r===p.toDataURL()}function l(e){if(!s||!s.fillText)return!1;switch(s.textBaseline="top",s.font="600 32px Arial",e){case"flag":return!c([127987,65039,8205,9895,65039],[127987,65039,8203,9895,65039])&&(!c([55356,56826,55356,56819],[55356,56826,8203,55356,56819])&&!c([55356,57332,56128,56423,56128,56418,56128,56421,56128,56430,56128,56423,56128,56447],[55356,57332,8203,56128,56423,8203,56128,56418,8203,56128,56421,8203,56128,56430,8203,56128,56423,8203,56128,56447]));case"emoji":return!c([55357,56424,55356,57342,8205,55358,56605,8205,55357,56424,55356,57340],[55357,56424,55356,57342,8203,55358,56605,8203,55357,56424,55356,57340])}return!1}function d(e){var t=a.createElement("script");t.src=e,t.defer=t.type="text/javascript",a.getElementsByTagName("head")[0].appendChild(t)}for(i=Array("flag","emoji"),t.supports={everything:!0,everythingExceptFlag:!0},o=0;o<i.length;o++)t.supports[i[o]]=l(i[o]),t.supports.everything=t.supports.everything&&t.supports[i[o]],"flag"!==i[o]&&(t.supports.everythingExceptFlag=t.supports.everythingExceptFlag&&t.supports[i[o]]);t.supports.everythingExceptFlag=t.supports.everythingExceptFlag&&!t.supports.flag,t.DOMReady=!1,t.readyCallback=function(){t.DOMReady=!0},t.supports.everything||(n=function(){t.readyCallback()},a.addEventListener?(a.addEventListener("DOMContentLoaded",n,!1),e.addEventListener("load",n,!1)):(e.attachEvent("onload",n),a.attachEvent("onreadystatechange",function(){"complete"===a.readyState&&t.readyCallback()})),(r=t.source||{}).concatemoji?d(r.concatemoji):r.wpemoji&&r.twemoji&&(d(r.twemoji),d(r.wpemoji)))}(window,document,window._wpemojiSettings);
+		</script><script src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/wp-emoji-release.js" type="text/javascript" defer="defer"></script>
+<style type="text/css">
+img.wp-smiley,
+img.emoji {
+	display: inline !important;
+	border: none !important;
+	box-shadow: none !important;
+	height: 1em !important;
+	width: 1em !important;
+	margin: 0 .07em !important;
+	vertical-align: -0.1em !important;
+	background: none !important;
+	padding: 0 !important;
+}
+</style>
+<link rel="stylesheet" id="astra-theme-css-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/style.css" type="text/css" media="all">
+<style id="astra-theme-css-inline-css" type="text/css">
+html{font-size:93.75%;}a,.page-title{color:#009699;}a:hover,a:focus{color:#3a3a3a;}body,button,input,select,textarea{font-family:'Montserrat',sans-serif;font-weight:400;font-size:15px;font-size:1rem;line-height:1.2;}blockquote{border-color:rgba(0,150,153,0.05);}p,.entry-content p{margin-bottom:1.4em;}h1,.entry-content h1,h2,.entry-content h2,h3,.entry-content h3,h4,.entry-content h4,h5,.entry-content h5,h6,.entry-content h6,.site-title,.site-title a{font-family:'Oswald',sans-serif;font-weight:500;}.site-title{font-size:35px;font-size:2.3333333333333rem;}header .site-logo-img .custom-logo-link img{max-width:165px;}.astra-logo-svg{width:165px;}.ast-archive-description .ast-archive-title{font-size:40px;font-size:2.6666666666667rem;}.site-header .site-description{font-size:15px;font-size:1rem;}.entry-title{font-size:40px;font-size:2.6666666666667rem;}.comment-reply-title{font-size:24px;font-size:1.6rem;}.ast-comment-list #cancel-comment-reply-link{font-size:15px;font-size:1rem;}h1,.entry-content h1{font-size:40px;font-size:2.6666666666667rem;}h2,.entry-content h2{font-size:30px;font-size:2rem;}h3,.entry-content h3{font-size:25px;font-size:1.6666666666667rem;}h4,.entry-content h4{font-size:20px;font-size:1.3333333333333rem;}h5,.entry-content h5{font-size:18px;font-size:1.2rem;}h6,.entry-content h6{font-size:15px;font-size:1rem;}.ast-single-post .entry-title,.page-title{font-size:30px;font-size:2rem;}#secondary,#secondary button,#secondary input,#secondary select,#secondary textarea{font-size:15px;font-size:1rem;}::selection{background-color:#009699;color:#ffffff;}body,h1,.entry-title a,.entry-content h1,h2,.entry-content h2,h3,.entry-content h3,h4,.entry-content h4,h5,.entry-content h5,h6,.entry-content h6{color:#3a3a3a;}.tagcloud a:hover,.tagcloud a:focus,.tagcloud a.current-item{color:#ffffff;border-color:#009699;background-color:#009699;}.main-header-menu a,.ast-header-custom-item a{color:#3a3a3a;}.main-header-menu li:hover > a,.main-header-menu li:hover > .ast-menu-toggle,.main-header-menu .ast-masthead-custom-menu-items a:hover,.main-header-menu li.focus > a,.main-header-menu li.focus > .ast-menu-toggle,.main-header-menu .current-menu-item > a,.main-header-menu .current-menu-ancestor > a,.main-header-menu .current_page_item > a,.main-header-menu .current-menu-item > .ast-menu-toggle,.main-header-menu .current-menu-ancestor > .ast-menu-toggle,.main-header-menu .current_page_item > .ast-menu-toggle{color:#009699;}input:focus,input[type="text"]:focus,input[type="email"]:focus,input[type="url"]:focus,input[type="password"]:focus,input[type="reset"]:focus,input[type="search"]:focus,textarea:focus{border-color:#009699;}input[type="radio"]:checked,input[type=reset],input[type="checkbox"]:checked,input[type="checkbox"]:hover:checked,input[type="checkbox"]:focus:checked,input[type=range]::-webkit-slider-thumb{border-color:#009699;background-color:#009699;box-shadow:none;}.site-footer a:hover + .post-count,.site-footer a:focus + .post-count{background:#009699;border-color:#009699;}.footer-adv .footer-adv-overlay{border-top-style:solid;border-top-color:#7a7a7a;}.ast-comment-meta{line-height:1.666666667;font-size:12px;font-size:0.8rem;}.single .nav-links .nav-previous,.single .nav-links .nav-next,.single .ast-author-details .author-title,.ast-comment-meta{color:#009699;}.menu-toggle,button,.ast-button,.button,input#submit,input[type="button"],input[type="submit"],input[type="reset"]{border-radius:2px;padding:10px 40px;color:#ffffff;border-color:#009699;background-color:#009699;}button:focus,.menu-toggle:hover,button:hover,.ast-button:hover,.button:hover,input[type=reset]:hover,input[type=reset]:focus,input#submit:hover,input#submit:focus,input[type="button"]:hover,input[type="button"]:focus,input[type="submit"]:hover,input[type="submit"]:focus{color:#ffffff;border-color:#3a3a3a;background-color:#3a3a3a;}.entry-meta,.entry-meta *{line-height:1.45;color:#009699;}.entry-meta a:hover,.entry-meta a:hover *,.entry-meta a:focus,.entry-meta a:focus *{color:#3a3a3a;}blockquote,blockquote a{color:#000000;}.ast-404-layout-1 .ast-404-text{font-size:200px;font-size:13.333333333333rem;}.widget-title{font-size:21px;font-size:1.4rem;color:#3a3a3a;}#cat option,.secondary .calendar_wrap thead a,.secondary .calendar_wrap thead a:visited{color:#009699;}.secondary .calendar_wrap #today,.ast-progress-val span{background:#009699;}.secondary a:hover + .post-count,.secondary a:focus + .post-count{background:#009699;border-color:#009699;}.calendar_wrap #today > a{color:#ffffff;}.ast-pagination a,.page-links .page-link,.single .post-navigation a{color:#009699;}.ast-pagination a:hover,.ast-pagination a:focus,.ast-pagination > span:hover:not(.dots),.ast-pagination > span.current,.page-links > .page-link,.page-links .page-link:hover,.post-navigation a:hover{color:#3a3a3a;}.ast-header-break-point .ast-mobile-menu-buttons-minimal.menu-toggle{background:transparent;color:#009699;}.ast-header-break-point .ast-mobile-menu-buttons-outline.menu-toggle{background:transparent;border:1px solid #009699;color:#009699;}.ast-header-break-point .ast-mobile-menu-buttons-fill.menu-toggle{background:#009699;}@media (min-width:545px){.ast-page-builder-template .comments-area,.single.ast-page-builder-template .entry-header,.single.ast-page-builder-template .post-navigation{max-width:1240px;margin-left:auto;margin-right:auto;}}body,.ast-separate-container{background-color:#2d2d2d;}@media (max-width:768px){.ast-archive-description .ast-archive-title{font-size:40px;}.entry-title{font-size:30px;}h1,.entry-content h1{font-size:30px;}h2,.entry-content h2{font-size:25px;}h3,.entry-content h3{font-size:20px;}.ast-single-post .entry-title,.page-title{font-size:30px;}}@media (max-width:544px){.ast-archive-description .ast-archive-title{font-size:40px;}.entry-title{font-size:30px;}h1,.entry-content h1{font-size:30px;}h2,.entry-content h2{font-size:25px;}h3,.entry-content h3{font-size:20px;}.ast-single-post .entry-title,.page-title{font-size:30px;}.ast-header-break-point .site-branding img,.ast-header-break-point #masthead .site-logo-img .custom-logo-link img{max-width:130px;}.astra-logo-svg{width:130px;}.ast-header-break-point .site-logo-img .custom-mobile-logo-link img{max-width:130px;}}@media (max-width:768px){html{font-size:85.5%;}}@media (max-width:544px){html{font-size:85.5%;}}@media (min-width:769px){.ast-container{max-width:1240px;}}@font-face {font-family: "Astra";src: url( https://blog.zecops.com/wp-content/themes/astra/assets/fonts/astra.woff) format("woff"),url( https://blog.zecops.com/wp-content/themes/astra/assets/fonts/astra.ttf) format("truetype"),url( https://blog.zecops.com/wp-content/themes/astra/assets/fonts/astra.svg#astra) format("svg");font-weight: normal;font-style: normal;}@media (max-width:921px) {.main-header-bar .main-header-bar-navigation{display:none;}}@media (min-width:769px){.blog .site-content > .ast-container,.archive .site-content > .ast-container,.search .site-content > .ast-container{max-width:1200px;}}.ast-desktop .main-header-menu.submenu-with-border .sub-menu,.ast-desktop .main-header-menu.submenu-with-border .children,.ast-desktop .main-header-menu.submenu-with-border .astra-full-megamenu-wrapper{border-color:#009699;}.ast-desktop .main-header-menu.submenu-with-border .sub-menu,.ast-desktop .main-header-menu.submenu-with-border .children{border-top-width:2px;border-right-width:0px;border-left-width:0px;border-bottom-width:0px;border-style:solid;}.ast-desktop .main-header-menu.submenu-with-border .sub-menu .sub-menu,.ast-desktop .main-header-menu.submenu-with-border .children .children{top:-2px;}.ast-desktop .main-header-menu.submenu-with-border .sub-menu a,.ast-desktop .main-header-menu.submenu-with-border .children a{border-bottom-width:0px;border-style:solid;border-color:#eaeaea;}@media (min-width:769px){.main-header-menu .sub-menu li.ast-left-align-sub-menu:hover > ul,.main-header-menu .sub-menu li.ast-left-align-sub-menu.focus > ul{margin-left:-0px;}}.ast-small-footer{border-top-style:solid;border-top-width:1px;border-top-color:#7a7a7a;}.ast-small-footer-wrap{text-align:center;}@media (max-width:920px){.ast-404-layout-1 .ast-404-text{font-size:100px;font-size:6.6666666666667rem;}}
+.ast-header-break-point .site-header{border-bottom-width:1px;}@media (min-width:769px){.main-header-bar{border-bottom-width:1px;}}.main-header-menu .menu-item, .main-header-bar .ast-masthead-custom-menu-items{-js-display:flex;display:flex;-webkit-box-pack:center;-webkit-justify-content:center;-moz-box-pack:center;-ms-flex-pack:center;justify-content:center;-webkit-box-orient:vertical;-webkit-box-direction:normal;-webkit-flex-direction:column;-moz-box-orient:vertical;-moz-box-direction:normal;-ms-flex-direction:column;flex-direction:column;}.main-header-menu > .menu-item > a{height:100%;-webkit-box-align:center;-webkit-align-items:center;-moz-box-align:center;-ms-flex-align:center;align-items:center;-js-display:flex;display:flex;}
+@media (min-width:769px){.ast-theme-transparent-header #masthead{position:absolute;left:0;right:0;}.ast-theme-transparent-header .main-header-bar, .ast-theme-transparent-header.ast-header-break-point .main-header-bar{background:none;}body.elementor-editor-active.ast-theme-transparent-header #masthead, .fl-builder-edit .ast-theme-transparent-header #masthead, body.vc_editor.ast-theme-transparent-header #masthead{z-index:0;}.ast-header-break-point.ast-replace-site-logo-transparent.ast-theme-transparent-header .ast-mobile-header-logo{display:none;}.ast-header-break-point.ast-replace-site-logo-transparent.ast-theme-transparent-header .transparent-custom-logo .custom-logo{display:inline-block;}.ast-theme-transparent-header .ast-above-header{background-image:none;background-color:transparent;}.ast-theme-transparent-header .ast-below-header{background-image:none;background-color:transparent;}}@media (max-width:768px){.ast-theme-transparent-header #masthead{position:absolute;left:0;right:0;}.ast-theme-transparent-header .main-header-bar, .ast-theme-transparent-header.ast-header-break-point .main-header-bar{background:none;}body.elementor-editor-active.ast-theme-transparent-header #masthead, .fl-builder-edit .ast-theme-transparent-header #masthead, body.vc_editor.ast-theme-transparent-header #masthead{z-index:0;}.ast-header-break-point.ast-replace-site-logo-transparent.ast-theme-transparent-header .ast-mobile-header-logo{display:none;}.ast-header-break-point.ast-replace-site-logo-transparent.ast-theme-transparent-header .transparent-custom-logo .custom-logo{display:inline-block;}.ast-theme-transparent-header .ast-above-header{background-image:none;background-color:transparent;}.ast-theme-transparent-header .ast-below-header{background-image:none;background-color:transparent;}}.ast-theme-transparent-header .main-header-bar, .ast-theme-transparent-header .site-header{border-bottom-width:0;}
+</style>
+<link rel="stylesheet" id="astra-google-fonts-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/css.css" type="text/css" media="all">
+<link rel="stylesheet" id="astra-menu-animation-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/menu-animation.css" type="text/css" media="all">
+<link rel="stylesheet" id="wp-block-library-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/style_002.css" type="text/css" media="all">
+<link rel="stylesheet" id="elementor-icons-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/elementor-icons.css" type="text/css" media="all">
+<link rel="stylesheet" id="elementor-animations-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/animations.css" type="text/css" media="all">
+<link rel="stylesheet" id="elementor-frontend-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/frontend_002.css" type="text/css" media="all">
+<style id="elementor-frontend-inline-css" type="text/css">
+.elementor-73 .elementor-element.elementor-element-52e7df60:not(.elementor-motion-effects-element-type-background), .elementor-73 .elementor-element.elementor-element-52e7df60 > .elementor-motion-effects-container > .elementor-motion-effects-layer{background-image:url("https://blog.zecops.com/wp-content/uploads/2020/06/smbleed-3.jpg");}
+</style>
+<link rel="stylesheet" id="elementor-pro-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/frontend.css" type="text/css" media="all">
+<link rel="stylesheet" id="font-awesome-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/font-awesome.css" type="text/css" media="all">
+<link rel="stylesheet" id="elementor-global-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/global.css" type="text/css" media="all">
+<link rel="stylesheet" id="elementor-post-36-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/post-36.css" type="text/css" media="all">
+<link rel="stylesheet" id="elementor-post-66-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/post-66.css" type="text/css" media="all">
+<link rel="stylesheet" id="elementor-post-73-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/post-73.css" type="text/css" media="all">
+<link rel="stylesheet" id="google-fonts-1-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/css_002.css" type="text/css" media="all">
+<link rel="https://api.w.org/" href="https://blog.zecops.com/wp-json/">
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://blog.zecops.com/xmlrpc.php?rsd">
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="https://blog.zecops.com/wp-includes/wlwmanifest.xml">
+<meta name="generator" content="WordPress 5.4.1">
+<link rel="shortlink" href="https://blog.zecops.com/?p=1203">
+<link rel="alternate" type="application/json+oembed" href="https://blog.zecops.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fblog.zecops.com%2Fvulnerabilities%2Fsmbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce%2F">
+<link rel="alternate" type="text/xml+oembed" href="https://blog.zecops.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fblog.zecops.com%2Fvulnerabilities%2Fsmbleedingghost-writeup-part-iii-from-remote-read-smbleed-to-rce%2F&amp;format=xml">
+
+<style type="text/css">
+/* Add your CSS code here.
+
+For example:
+.example {
+    color: red;
+}
+
+For brushing up on your CSS knowledge, check out http://www.w3schools.com/css/css_syntax.asp
+
+End of comment */ 
+
+.nice-code-block {
+  padding: 24px 0;
+    border-radius: 10px;
+}</style>
+
+
+<style type="text/css">
+/* Add your CSS code here.
+
+For example:
+.example {
+    color: red;
+}
+
+For brushing up on your CSS knowledge, check out http://www.w3schools.com/css/css_syntax.asp
+
+End of comment */ 
+
+.are-you-at-risk-container {
+  background: url("https://blog.zecops.com/wp-content/uploads/2020/04/dark-plexus-lowres.jpg")
+    no-repeat;
+  background-size: cover;
+  background-position: center center;
+  background-color: #000;
+  color: white;
+  display: flex;
+  padding: 24px 72px;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.are-you-at-risk-container::after {
+  content: "";
+  background: rgba(0, 0, 0, 0.4);
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  position: absolute;
+  z-index: 1;
+}
+
+.are-you-at-risk-img {
+  margin-right: 24px;
+  z-index: 10;
+}
+
+.are-you-at-risk-title {
+  margin-right: 24px;
+  font-family: "Oswald", sans-serif;
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 30px;
+  z-index: 10;
+  line-height: 1;
+}
+#are-you-at-risk-form {
+  z-index: 10;
+}
+#are-you-at-risk-btn {
+  border: none;
+  font-family: "Montserrat", sans-serif;
+  background: #009699;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+  padding: 12px 24px;
+  border-radius: 4px;
+  z-index: 10;
+}
+
+#are-you-at-risk-btn:hover {
+  background: #007173;
+}
+#are-you-at-risk-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #33c9cc;
+}
+
+#are-you-at-risk-btn:active {
+  background: #000;
+}
+
+@media only screen and (max-width: 758px) {
+  .are-you-at-risk-container {
+    padding: 24px 24px;
+  }
+}
+
+@media only screen and (max-width: 595px) {
+  .are-you-at-risk-container {
+    flex-direction: column;
+    text-align: center;
+  }
+  .are-you-at-risk-img,
+  .are-you-at-risk-title {
+    margin-right: 0;
+    margin-bottom: 16px;
+  }
+}
+
+@media only screen and (max-width: 360px) {
+  .are-you-at-risk-title {
+    font-size: 24px;
+  }
+}</style>
+
+
+<style type="text/css">
+@media (max-width: 800px) {
+  .mc4wp-form-fields .signup-form{
+    display: block !important;
+  }
+  .mc4wp-form-fields .signup-form .signup-field{
+  	width: 220px;
+    margin-bottom: 8px;
+  }
+  
+  .elementor-widget-search-form{
+  	display: none;
+  }
+  
+  .elementor-36 .elementor-element.elementor-element-8bde1fb {
+  	padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+@media (max-width: 398px) {
+  .mc4wp-form-fields ul li:nth-child(2) {
+  	margin-bottom: 24px !important;
+  }
+  .mc4wp-form-fields .zecops-blog-callout-nospace {
+  	padding-top: 0;
+  }
+}
+
+.mc4wp-alert.mc4wp-success {
+    box-sizing: border-box;
+    background-color: #fafafa;
+    padding: 25px;
+    border: 2px solid #ccc;
+}
+
+.mc4wp-alert.mc4wp-success p {
+    margin-bottom: 0;
+}</style>
+
+
+<style type="text/css">
+/* Add your CSS code here.
+
+For example:
+.example {
+    color: red;
+}
+
+For brushing up on your CSS knowledge, check out http://www.w3schools.com/css/css_syntax.asp
+
+End of comment */ 
+
+
+/*@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;1,400;1,700&family=Source+Code+Pro:ital,wght@0,400;0,700;1,400;1,700&display=swap');*/</style>
+
+
+<style type="text/css">
+/* Add your CSS code here.
+
+For example:
+.example {
+    color: red;
+}
+
+For brushing up on your CSS knowledge, check out http://www.w3schools.com/css/css_syntax.asp
+
+End of comment */ 
+
+
+pre.pre-unstyled code {
+  background-color: transparent !important;
+  color: #333 !important;
+}</style>
+
+
+<style type="text/css">
+/* Add your CSS code here.
+
+For example:
+.example {
+    color: red;
+}
+
+For brushing up on your CSS knowledge, check out http://www.w3schools.com/css/css_syntax.asp
+
+End of comment */ 
+
+.inline-code-block {
+  box-sizing: border-box;
+  background-color: #eee;
+  display: inline-block;
+  padding: 16px;
+  font-size: 14px;
+  font-family: "Courier 10 Pitch",Courier,monospace;
+  margin: 4px 0 4px;
+}</style>
+
+
+<style type="text/css">
+.zecops-blog-callout {
+  box-sizing: border-box;
+  background-color: #fafafa;
+  padding: 40px;
+  margin-top: 56px;
+  border: 2px solid #ccc;
+}
+
+.zecops-blog-callout-nospace {
+  box-sizing: border-box;
+  background-color: #fafafa;
+  padding: 40px;
+  margin-bottom: 56px;
+  border: 2px solid #ccc;
+}
+
+.zecops-blog-callout-small {
+  box-sizing: border-box;
+  background-color: #fafafa;
+  padding: 24px;
+  border: 2px solid #ccc;
+}</style>
+
+
+<style type="text/css">
+.elementor-widget-theme-post-content a {
+    text-decoration: underline;
+    color: #1979FF;
+    transition: none;
+}
+.elementor-widget-theme-post-content a:hover {
+	text-decoration: none;
+}</style>
+
+
+<style type="text/css">
+.elementor .elementor-widget:not(.elementor-widget-text-editor) .wp-block-image figure {
+    margin-left: auto;
+    margin-right: auto;
+}</style>
+
+
+<style type="text/css">
+/* Add your CSS code here.
+
+For example:
+.example {
+    color: red;
+}
+
+For brushing up on your CSS knowledge, check out http://www.w3schools.com/css/css_syntax.asp
+
+End of comment */ 
+
+code {
+ color: #009699;
+ background-color: #F7FCFC;
+}</style>
+
+
+<style type="text/css">
+.pseudo-code {
+  font-family: monaco, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color:white;
+  white-space: pre;
+  background-color:#333333;
+  margin-bottom:1em;
+  padding:8px;
+}</style>
+
+
+<style type="text/css">
+.tldr {
+	box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+	margin-bottom: 2em;
+}
+
+@media (min-width: 600px) { 
+  .tldr .wp-block-media-text__content,
+  .tldr .wp-block-media-text .wp-block-media-text__content{
+    padding-top: 2em !important;
+  }
+}
+
+@media (max-width: 600px) {
+h2, .entry-content h2 {
+    margin-top: 1em;
+}
+}</style>
+
+
+<script type="text/javascript">
+var $j = jQuery.noConflict();
+// $j is now an alias to the jQuery function; creating the new alias is optional.
+ 
+$j(document).ready(function() {
+  setTimeout(function(){
+  	$j('.elementor-nav-menu--dropdown.elementor-nav-menu__container').css('height', $j(document).height());
+  }, 1500);
+});
+
+</script>
+
+<link rel="stylesheet" id="608-css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/608.css" type="text/css" media="all">
+<link rel="pingback" href="https://blog.zecops.com/xmlrpc.php">
+<link rel="stylesheet" type="text/css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/shCore.css"><link rel="stylesheet" type="text/css" href="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/shThemeRDark.css"><style type="text/css" id="syntaxhighlighteranchor"></style>
+<link rel="icon" href="https://blog.zecops.com/wp-content/uploads/2020/04/favicon.png" sizes="32x32">
+<link rel="icon" href="https://blog.zecops.com/wp-content/uploads/2020/04/favicon.png" sizes="192x192">
+<link rel="apple-touch-icon" href="https://blog.zecops.com/wp-content/uploads/2020/04/favicon.png">
+<meta name="msapplication-TileImage" content="https://blog.zecops.com/wp-content/uploads/2020/04/favicon.png">
+<style type="text/css" id="wp-custom-css">
+			h1, .entry-content h1, h2, .entry-content h2, h3, .entry-content h3, h4, .entry-content h4, h5, .entry-content h5, h6, .entry-content h6 {
+    margin-bottom: 0.5em;
+}
+
+.ast-separate-container #wpwrap .edit-post-visual-editor, .ast-page-builder-template #wpwrap .edit-post-visual-editor, .ast-plain-container #wpwrap .edit-post-visual-editor {
+    background-color: red;
+}
+
+
+/* helper class: gray border for white BG images */
+.border img {
+	border: 1px solid #ddd;
+}		</style>
+
+<script async="" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/js"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-104258807-19');
+</script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/sharethis.js"></script>
+<script type="text/javascript" defer="defer" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/ebc65754-14d0-4b0e-bab5-fe23b2d089f0.js"></script><style type="text/css">#st-1 {
+  font-family: "Helvetica Neue", Verdana, Helvetica, Arial, sans-serif;;
+  direction: ltr;
+  display: block;
+  opacity: 1;
+  text-align: right;
+  z-index: 94034;
+}
+#st-1.st-animated {
+  -moz-transition: o 0.2s ease-in, p 0.2s ease-in, a 0.2s ease-in, c 0.2s ease-in, i 0.2s ease-in, t 0.2s ease-in, y 0.2s ease-in; -ms-transition: o 0.2s ease-in, p 0.2s ease-in, a 0.2s ease-in, c 0.2s ease-in, i 0.2s ease-in, t 0.2s ease-in, y 0.2s ease-in; -o-transition: o 0.2s ease-in, p 0.2s ease-in, a 0.2s ease-in, c 0.2s ease-in, i 0.2s ease-in, t 0.2s ease-in, y 0.2s ease-in; -webkit-transition: o 0.2s ease-in, p 0.2s ease-in, a 0.2s ease-in, c 0.2s ease-in, i 0.2s ease-in, t 0.2s ease-in, y 0.2s ease-in; transition: o 0.2s ease-in, p 0.2s ease-in, a 0.2s ease-in, c 0.2s ease-in, i 0.2s ease-in, t 0.2s ease-in, y 0.2s ease-in;
+}
+#st-1.st-hidden {
+  opacity: 0;
+}
+#st-1.st-hide {
+  display: none;
+}
+#st-1 .st-btn {
+  -moz-box-sizing: border-box;
+-webkit-box-sizing: border-box;
+box-sizing: border-box;
+  -moz-transition: opacity 0.2s ease-in, top 0.2s ease-in; -ms-transition: opacity 0.2s ease-in, top 0.2s ease-in; -o-transition: opacity 0.2s ease-in, top 0.2s ease-in; -webkit-transition: opacity 0.2s ease-in, top 0.2s ease-in; transition: opacity 0.2s ease-in, top 0.2s ease-in;
+  -moz-border-radius: 4px;
+-webkit-border-radius: 4px;
+border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 12px;
+  height: 32px;
+  line-height: 32px;
+  margin-right: 8px;
+  padding: 0 10px;
+  position: relative;
+  text-align: center;
+  top: 0;
+  vertical-align: top;
+  white-space: nowrap;
+}
+#st-1 .st-btn:last-child {
+  margin-right: 0;
+}
+#st-1 .st-btn > svg {
+  height: 16px;
+  width: 16px;
+  position: relative;
+  top: 8px;
+  vertical-align: top;
+}
+#st-1 .st-btn > img {
+  display: inline-block;
+  height: 16px;
+  width: 16px;
+  position: relative;
+  top: 8px;
+  vertical-align: top;
+}
+#st-1 .st-btn > span {
+  -moz-transition: all 0.2s ease-in; -ms-transition: all 0.2s ease-in; -o-transition: all 0.2s ease-in; -webkit-transition: all 0.2s ease-in; transition: all 0.2s ease-in;
+  color: #fff;
+  display: inline-block;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  min-width: 60px;
+  opacity: 1;
+  padding: 0 6px;
+  position: relative;
+  vertical-align: top;
+}
+#st-1.st-has-labels .st-btn {
+  min-width: 120px;
+}
+#st-1.st-has-labels .st-btn.st-remove-label {
+  min-width: 50px;
+}
+#st-1.st-has-labels .st-btn.st-remove-label > span {
+  display: none;
+}
+#st-1.st-has-labels .st-btn.st-hide-label > span {
+  display: none;
+}
+#st-1 .st-total {
+  color: #555;
+  display: inline-block;
+  font-weight: 500;
+  line-height: 12px;
+  margin-right: 0;
+  max-width: 80px;
+  padding: 4px 8px;
+  text-align: center;
+}
+#st-1 .st-total.st-hidden {
+  display: none;
+}
+#st-1 .st-total > span {
+  font-size: 16px;
+  line-height: 17px;
+  display: block;
+  padding: 0;
+}
+#st-1 .st-total > span.st-shares {
+  font-size: 9px;
+  line-height: 9px;
+}
+#st-1.st-justified {
+  display: flex;
+  text-align: center;
+}
+#st-1.st-justified .st-btn {
+  -moz-flex: 1;
+-ms-flex: 1;
+-webkit-flex: 1;
+flex: 1;
+}#st-1 .st-btn:hover {
+  opacity: .8;
+  top: -4px;
+}#st-1 .st-btn[data-network='facebook'] {
+  background-color: #4267B2;
+}
+#st-1 .st-btn[data-network='facebook'] svg {
+  fill: #fff;
+}
+#st-1 .st-btn[data-network='facebook'] > span {
+  color: #fff;
+}
+#st-1 .st-btn[data-network='twitter'] {
+  background-color: #55acee;
+}
+#st-1 .st-btn[data-network='twitter'] svg {
+  fill: #fff;
+}
+#st-1 .st-btn[data-network='twitter'] > span {
+  color: #fff;
+}
+#st-1 .st-btn[data-network='linkedin'] {
+  background-color: #0077b5;
+}
+#st-1 .st-btn[data-network='linkedin'] svg {
+  fill: #fff;
+}
+#st-1 .st-btn[data-network='linkedin'] > span {
+  color: #fff;
+}</style><style type="text/css">#st-3 {
+  font-family: "Helvetica Neue", Verdana, Helvetica, Arial, sans-serif;;
+  direction: ltr;
+  display: block;
+  opacity: 1;
+  text-align: right;
+  z-index: 94034;
+}
+#st-3.st-animated {
+  -moz-transition: o 0.2s ease-in, p 0.2s ease-in, a 0.2s ease-in, c 0.2s ease-in, i 0.2s ease-in, t 0.2s ease-in, y 0.2s ease-in; -ms-transition: o 0.2s ease-in, p 0.2s ease-in, a 0.2s ease-in, c 0.2s ease-in, i 0.2s ease-in, t 0.2s ease-in, y 0.2s ease-in; -o-transition: o 0.2s ease-in, p 0.2s ease-in, a 0.2s ease-in, c 0.2s ease-in, i 0.2s ease-in, t 0.2s ease-in, y 0.2s ease-in; -webkit-transition: o 0.2s ease-in, p 0.2s ease-in, a 0.2s ease-in, c 0.2s ease-in, i 0.2s ease-in, t 0.2s ease-in, y 0.2s ease-in; transition: o 0.2s ease-in, p 0.2s ease-in, a 0.2s ease-in, c 0.2s ease-in, i 0.2s ease-in, t 0.2s ease-in, y 0.2s ease-in;
+}
+#st-3.st-hidden {
+  opacity: 0;
+}
+#st-3.st-hide {
+  display: none;
+}
+#st-3 .st-btn {
+  -moz-box-sizing: border-box;
+-webkit-box-sizing: border-box;
+box-sizing: border-box;
+  -moz-transition: opacity 0.2s ease-in, top 0.2s ease-in; -ms-transition: opacity 0.2s ease-in, top 0.2s ease-in; -o-transition: opacity 0.2s ease-in, top 0.2s ease-in; -webkit-transition: opacity 0.2s ease-in, top 0.2s ease-in; transition: opacity 0.2s ease-in, top 0.2s ease-in;
+  -moz-border-radius: 4px;
+-webkit-border-radius: 4px;
+border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 12px;
+  height: 32px;
+  line-height: 32px;
+  margin-right: 8px;
+  padding: 0 10px;
+  position: relative;
+  text-align: center;
+  top: 0;
+  vertical-align: top;
+  white-space: nowrap;
+}
+#st-3 .st-btn:last-child {
+  margin-right: 0;
+}
+#st-3 .st-btn > svg {
+  height: 16px;
+  width: 16px;
+  position: relative;
+  top: 8px;
+  vertical-align: top;
+}
+#st-3 .st-btn > img {
+  display: inline-block;
+  height: 16px;
+  width: 16px;
+  position: relative;
+  top: 8px;
+  vertical-align: top;
+}
+#st-3 .st-btn > span {
+  -moz-transition: all 0.2s ease-in; -ms-transition: all 0.2s ease-in; -o-transition: all 0.2s ease-in; -webkit-transition: all 0.2s ease-in; transition: all 0.2s ease-in;
+  color: #fff;
+  display: inline-block;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  min-width: 60px;
+  opacity: 1;
+  padding: 0 6px;
+  position: relative;
+  vertical-align: top;
+}
+#st-3.st-has-labels .st-btn {
+  min-width: 120px;
+}
+#st-3.st-has-labels .st-btn.st-remove-label {
+  min-width: 50px;
+}
+#st-3.st-has-labels .st-btn.st-remove-label > span {
+  display: none;
+}
+#st-3.st-has-labels .st-btn.st-hide-label > span {
+  display: none;
+}
+#st-3 .st-total {
+  color: #555;
+  display: inline-block;
+  font-weight: 500;
+  line-height: 12px;
+  margin-right: 0;
+  max-width: 80px;
+  padding: 4px 8px;
+  text-align: center;
+}
+#st-3 .st-total.st-hidden {
+  display: none;
+}
+#st-3 .st-total > span {
+  font-size: 16px;
+  line-height: 17px;
+  display: block;
+  padding: 0;
+}
+#st-3 .st-total > span.st-shares {
+  font-size: 9px;
+  line-height: 9px;
+}
+#st-3.st-justified {
+  display: flex;
+  text-align: center;
+}
+#st-3.st-justified .st-btn {
+  -moz-flex: 1;
+-ms-flex: 1;
+-webkit-flex: 1;
+flex: 1;
+}#st-3 .st-btn:hover {
+  opacity: .8;
+  top: -4px;
+}#st-3 .st-btn[data-network='facebook'] {
+  background-color: #4267B2;
+}
+#st-3 .st-btn[data-network='facebook'] svg {
+  fill: #fff;
+}
+#st-3 .st-btn[data-network='facebook'] > span {
+  color: #fff;
+}
+#st-3 .st-btn[data-network='twitter'] {
+  background-color: #55acee;
+}
+#st-3 .st-btn[data-network='twitter'] svg {
+  fill: #fff;
+}
+#st-3 .st-btn[data-network='twitter'] > span {
+  color: #fff;
+}
+#st-3 .st-btn[data-network='linkedin'] {
+  background-color: #0077b5;
+}
+#st-3 .st-btn[data-network='linkedin'] svg {
+  fill: #fff;
+}
+#st-3 .st-btn[data-network='linkedin'] > span {
+  color: #fff;
+}</style></head><body itemtype="https://schema.org/Blog" itemscope="itemscope" class="post-template-default single single-post postid-1203 single-format-standard wp-custom-logo ast-desktop ast-page-builder-template ast-no-sidebar astra-1.6.4 ast-header-custom-item-inside ast-blog-single-style-1 ast-single-post ast-inherit-site-logo-transparent elementor-page-73 ast-normal-title-enabled elementor-default elementor-kit-1166" style="margin-top: 43.2px;" data-elementor-device-mode="desktop">
+<div id="page" class="hfeed site">
+<a class="skip-link screen-reader-text" href="#content">Skip to content</a>
+ <div data-elementor-type="header" data-elementor-id="36" class="elementor elementor-36 elementor-location-header" data-elementor-settings="[]">
+<div class="elementor-inner">
+<div class="elementor-section-wrap">
+<section class="elementor-element elementor-element-1511372 elementor-section-stretched elementor-section-full_width elementor-section-height-default elementor-section-height-default elementor-section elementor-top-section" data-id="1511372" data-element_type="section" data-settings="{&quot;stretch_section&quot;:&quot;section-stretched&quot;}" style="width: 1362px; left: 0px;">
+<div class="elementor-container elementor-column-gap-no">
+<div class="elementor-row">
+<div class="elementor-element elementor-element-a841497 elementor-column elementor-col-100 elementor-top-column" data-id="a841497" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-79af2b8 elementor-widget elementor-widget-html" data-id="79af2b8" data-element_type="widget" data-widget_type="html.default">
+<div class="elementor-widget-container">
+<div class="notif" style="display: none">
+<img src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/notif-arrow.html" alt="" class="notif-arrow">
+<a href="https://www.zecops.com/contact-us?subj=Meet+Zecops+at+BlackHat+2019+and+DEF+CON+27" target="_blank" class="notif-link w-inline-block">
+<div>
+<strong>Meet Zecops at BlackHat 2019 &amp; DEF CON 27 </strong> | <u>Schedule a meeting</u>
+</div>
+</a>
+</div> </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<header class="elementor-element elementor-element-8bde1fb elementor-section-content-middle elementor-section-height-min-height elementor-section-boxed elementor-section-height-default elementor-section-items-middle elementor-section elementor-top-section" data-id="8bde1fb" data-element_type="section" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
+<div class="elementor-container elementor-column-gap-no">
+<div class="elementor-row">
+<div class="elementor-element elementor-element-57ecf16a elementor-column elementor-col-25 elementor-top-column" data-id="57ecf16a" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-3cf6a1f6 elementor-widget elementor-widget-theme-site-logo elementor-widget-image" data-id="3cf6a1f6" data-element_type="widget" data-widget_type="theme-site-logo.default">
+<div class="elementor-widget-container">
+<div class="elementor-image">
+<a href="https://blog.zecops.com/">
+<img src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/zecops-blog-logo.svg" class="astra-logo-svg" alt="" width="100%" height="100%"> </a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="elementor-element elementor-element-31a3f902 elementor-column elementor-col-50 elementor-top-column" data-id="31a3f902" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-41375340 elementor-nav-menu__align-right elementor-nav-menu--stretch elementor-nav-menu--indicator-none elementor-nav-menu--dropdown-tablet elementor-nav-menu__text-align-aside elementor-nav-menu--toggle elementor-nav-menu--burger elementor-widget elementor-widget-nav-menu" data-id="41375340" data-element_type="widget" data-settings="{&quot;full_width&quot;:&quot;stretch&quot;,&quot;layout&quot;:&quot;horizontal&quot;,&quot;toggle&quot;:&quot;burger&quot;}" data-widget_type="nav-menu.default">
+<div class="elementor-widget-container">
+<nav role="navigation" class="elementor-nav-menu--main elementor-nav-menu__container elementor-nav-menu--layout-horizontal e--pointer-none"><ul id="menu-1-41375340" class="elementor-nav-menu" data-smartmenus-id="15947591860365652"><li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-945"><a href="#" class="elementor-item elementor-item-anchor has-submenu" id="sm-15947591860365652-1" aria-haspopup="true" aria-controls="sm-15947591860365652-2" aria-expanded="false">Solutions<span class="sub-arrow"><i class="fa"></i></span></a>
+<ul class="sub-menu elementor-nav-menu--dropdown" id="sm-15947591860365652-2" role="group" aria-hidden="true" aria-labelledby="sm-15947591860365652-1" aria-expanded="false">
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-946"><a href="https://www.zecops.com/solutions/gluon" class="elementor-sub-item">Gluon</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-947"><a href="https://www.zecops.com/solutions/neutrino" class="elementor-sub-item">Neutrino</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-948"><a href="https://www.zecops.com/solutions/electron" class="elementor-sub-item">Electron</a></li>
+</ul>
+</li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-949"><a href="#" class="elementor-item elementor-item-anchor has-submenu" id="sm-15947591860365652-3" aria-haspopup="true" aria-controls="sm-15947591860365652-4" aria-expanded="false">Company<span class="sub-arrow"><i class="fa"></i></span></a>
+<ul class="sub-menu elementor-nav-menu--dropdown" id="sm-15947591860365652-4" role="group" aria-hidden="true" aria-labelledby="sm-15947591860365652-3" aria-expanded="false">
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-648"><a href="https://www.zecops.com/company/about-us" class="elementor-sub-item">About</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-814"><a href="https://www.zecops.com/company/news" class="elementor-sub-item">News</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-815"><a href="https://www.zecops.com/company/events" class="elementor-sub-item">Events</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-611"><a href="https://www.zecops.com/contact/contact-us" class="elementor-sub-item">Contact</a></li>
+</ul>
+</li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-650"><a href="https://www.zecops.com/contact/find-a-reseller" class="elementor-item">Find a Reseller</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-28"><a href="https://zecops.com/" class="elementor-item">ZecOps.com</a></li>
+</ul></nav>
+<div class="elementor-menu-toggle" role="button" tabindex="0" aria-label="Menu Toggle" aria-expanded="false" style="">
+<i class="eicon-menu-bar" aria-hidden="true"></i>
+<span class="elementor-screen-only">Menu</span>
+</div>
+<nav class="elementor-nav-menu--dropdown elementor-nav-menu__container" role="navigation" aria-hidden="true" style="width: 1362px; left: 0px; top: 43px;"><ul id="menu-2-41375340" class="elementor-nav-menu" data-smartmenus-id="15947591860424028"><li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-945"><a href="#" class="elementor-item elementor-item-anchor has-submenu" id="sm-15947591860424028-1" aria-haspopup="true" aria-controls="sm-15947591860424028-2" aria-expanded="false">Solutions<span class="sub-arrow"><i class="fa"></i></span></a>
+<ul class="sub-menu elementor-nav-menu--dropdown" id="sm-15947591860424028-2" role="group" aria-hidden="true" aria-labelledby="sm-15947591860424028-1" aria-expanded="false">
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-946"><a href="https://www.zecops.com/solutions/gluon" class="elementor-sub-item">Gluon</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-947"><a href="https://www.zecops.com/solutions/neutrino" class="elementor-sub-item">Neutrino</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-948"><a href="https://www.zecops.com/solutions/electron" class="elementor-sub-item">Electron</a></li>
+</ul>
+</li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-949"><a href="#" class="elementor-item elementor-item-anchor has-submenu" id="sm-15947591860424028-3" aria-haspopup="true" aria-controls="sm-15947591860424028-4" aria-expanded="false">Company<span class="sub-arrow"><i class="fa"></i></span></a>
+<ul class="sub-menu elementor-nav-menu--dropdown" id="sm-15947591860424028-4" role="group" aria-hidden="true" aria-labelledby="sm-15947591860424028-3" aria-expanded="false">
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-648"><a href="https://www.zecops.com/company/about-us" class="elementor-sub-item">About</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-814"><a href="https://www.zecops.com/company/news" class="elementor-sub-item">News</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-815"><a href="https://www.zecops.com/company/events" class="elementor-sub-item">Events</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-611"><a href="https://www.zecops.com/contact/contact-us" class="elementor-sub-item">Contact</a></li>
+</ul>
+</li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-650"><a href="https://www.zecops.com/contact/find-a-reseller" class="elementor-item">Find a Reseller</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-28"><a href="https://zecops.com/" class="elementor-item">ZecOps.com</a></li>
+</ul></nav>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="elementor-element elementor-element-1ed5d71b elementor-column elementor-col-25 elementor-top-column" data-id="1ed5d71b" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-4f1d242c elementor-search-form--skin-minimal elementor-widget elementor-widget-search-form" data-id="4f1d242c" data-element_type="widget" data-settings="{&quot;skin&quot;:&quot;minimal&quot;}" data-widget_type="search-form.default">
+<div class="elementor-widget-container">
+<form class="elementor-search-form" role="search" action="https://blog.zecops.com" method="get">
+<div class="elementor-search-form__container">
+<div class="elementor-search-form__icon">
+<i class="fa fa-search" aria-hidden="true"></i>
+<span class="elementor-screen-only">Search</span>
+</div>
+<input placeholder="Search..." class="elementor-search-form__input" type="search" name="s" title="Search">
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</header>
+</div>
+</div>
+</div>
+<div id="content" class="site-content">
+<div class="ast-container">
+
+<div id="primary" class="content-area primary">
+<main id="main" class="site-main" role="main">
+ <div data-elementor-type="single" data-elementor-id="73" class="elementor elementor-73 elementor-location-single post-1203 post type-post status-publish format-standard has-post-thumbnail hentry category-vulnerabilities ast-article-single" data-elementor-settings="[]">
+<div class="elementor-inner">
+<div class="elementor-section-wrap">
+<section class="elementor-element elementor-element-52e7df60 elementor-section-height-min-height elementor-section-boxed elementor-section-height-default elementor-section-items-middle elementor-section elementor-top-section" data-id="52e7df60" data-element_type="section" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
+<div class="elementor-background-overlay"></div>
+<div class="elementor-container elementor-column-gap-default">
+<div class="elementor-row">
+<div class="elementor-element elementor-element-49a1dd47 elementor-column elementor-col-100 elementor-top-column" data-id="49a1dd47" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-cb0a03a elementor-widget elementor-widget-theme-post-title elementor-page-title elementor-widget-heading" data-id="cb0a03a" data-element_type="widget" data-widget_type="theme-post-title.default">
+<div class="elementor-widget-container">
+<h1 class="elementor-heading-title elementor-size-default">SMBleedingGhost Writeup Part III: From Remote Read (SMBleed) to RCE</h1> </div>
+</div>
+<div class="elementor-element elementor-element-5c744e98 elementor-align-center elementor-widget elementor-widget-post-info" data-id="5c744e98" data-element_type="widget" data-widget_type="post-info.default">
+<div class="elementor-widget-container">
+<ul class="elementor-inline-items elementor-icon-list-items elementor-post-info">
+<li class="elementor-icon-list-item elementor-repeater-item-9b232b3 elementor-inline-item" itemprop="author">
+<a href="https://blog.zecops.com/author/admin/">
+<span class="elementor-icon-list-text elementor-post-info__item elementor-post-info__item--type-author">
+<span class="elementor-post-info__item-prefix">By</span>
+ZecOps Research Team </span>
+</a>
+</li>
+<li class="elementor-icon-list-item elementor-repeater-item-f7a06a1 elementor-inline-item" itemprop="datePublished">
+<span class="elementor-icon-list-text elementor-post-info__item elementor-post-info__item--type-date">
+<span class="elementor-post-info__item-prefix">|&nbsp;&nbsp;</span>
+June 28, 2020 </span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="elementor-element elementor-element-70c16113 elementor-section-boxed elementor-section-height-default elementor-section-height-default elementor-section elementor-top-section" data-id="70c16113" data-element_type="section">
+<div class="elementor-container elementor-column-gap-no">
+<div class="elementor-row">
+<div class="elementor-element elementor-element-378dc609 elementor-column elementor-col-100 elementor-top-column" data-id="378dc609" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-3ac481ff elementor-widget elementor-widget-image" data-id="3ac481ff" data-element_type="widget" data-widget_type="image.default">
+<div class="elementor-widget-container">
+<div class="elementor-image">
+<img src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/profile2x.png" class="attachment-large size-large" alt="" srcset="https://blog.zecops.com/wp-content/uploads/2019/01/profile@2x.png 562w, https://blog.zecops.com/wp-content/uploads/2019/01/profile@2x-150x150.png 150w, https://blog.zecops.com/wp-content/uploads/2019/01/profile@2x-300x300.png 300w" sizes="(max-width: 562px) 100vw, 562px" width="562" height="562"> </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="elementor-element elementor-element-7b7c10a elementor-section-boxed elementor-section-height-default elementor-section-height-default elementor-section elementor-top-section" data-id="7b7c10a" data-element_type="section">
+<div class="elementor-container elementor-column-gap-default">
+<div class="elementor-row">
+<div class="elementor-element elementor-element-575d802 elementor-column elementor-col-100 elementor-top-column" data-id="575d802" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<section class="elementor-element elementor-element-9811ef6 elementor-section-boxed elementor-section-height-default elementor-section-height-default elementor-section elementor-inner-section" data-id="9811ef6" data-element_type="section">
+<div class="elementor-container elementor-column-gap-default">
+<div class="elementor-row">
+<div class="elementor-element elementor-element-d2fa511 elementor-column elementor-col-33 elementor-inner-column" data-id="d2fa511" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-697202f elementor-widget elementor-widget-heading" data-id="697202f" data-element_type="widget" data-widget_type="heading.default">
+<div class="elementor-widget-container">
+<h2 class="elementor-heading-title elementor-size-default">SHARE THIS ARTICLE</h2> </div>
+</div>
+</div>
+</div>
+</div>
+<div class="elementor-element elementor-element-94c494e elementor-column elementor-col-66 elementor-inner-column" data-id="94c494e" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-3181c0a elementor-widget elementor-widget-html" data-id="3181c0a" data-element_type="widget" data-widget_type="html.default">
+<div class="elementor-widget-container">
+
+<div class="sharethis-inline-share-buttons st-right st-has-labels  st-inline-share-buttons st-animated" id="st-1"><div class="st-total ">
+  <span class="st-label">657</span>
+  <span class="st-shares">
+    Shares
+  </span>
+</div><div class="st-btn st-first" data-network="facebook" style="display: inline-block;" data-title="SMBleedingGhost Writeup Part III: From Remote Read (SMBleed) to RCE - ZecOps Blog">
+  <img alt="facebook sharing button" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/facebook.svg">
+  <span class="st-label">28</span>
+</div><div class="st-btn" data-network="twitter" style="display: inline-block;">
+  <img alt="twitter sharing button" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/twitter.svg">
+  <span class="st-label">391</span>
+</div><div class="st-btn st-last" data-network="linkedin" style="display: inline-block;" data-title="SMBleedingGhost Writeup Part III: From Remote Read (SMBleed) to RCE - ZecOps Blog">
+  <img alt="linkedin sharing button" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/linkedin.svg">
+  <span class="st-label">18</span>
+</div></div> </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="elementor-element elementor-element-5f95bc16 elementor-section-boxed elementor-section-height-default elementor-section-height-default elementor-section elementor-top-section" data-id="5f95bc16" data-element_type="section">
+<div class="elementor-container elementor-column-gap-default">
+<div class="elementor-row">
+<div class="elementor-element elementor-element-5a0c3ff6 elementor-column elementor-col-100 elementor-top-column" data-id="5a0c3ff6" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-630e77ad elementor-widget elementor-widget-theme-post-content" data-id="630e77ad" data-element_type="widget" data-widget_type="theme-post-content.default">
+<div class="elementor-widget-container">
+<h2>Introduction</h2>
+<p>Previous SMBleedingGhost write-ups:&nbsp;</p>
+<ul><li><a href="https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-chaining-smbleed-cve-2020-1206-with-smbghost/" target="_blank" rel="noreferrer noopener">Part I</a></li><li><a href="https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-ii-unauthenticated-memory-read-preparing-the-ground-for-an-rce/" target="_blank" rel="noreferrer noopener">Part II</a></li><li>Part III (this)</li></ul>
+<p>In the previous part of the series, <a rel="noreferrer noopener" href="https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-ii-unauthenticated-memory-read-preparing-the-ground-for-an-rce/" target="_blank">SMBleedingGhost Writeup Part II: Unauthenticated Memory Read – Preparing the Ground for an RCE</a>,
+ we described two techniques that allow us to read uninitialized memory 
+from the pool buffers allocated by the SrvNetAllocateBuffer function of 
+the srvnet.sys module. The first technique accomplishes that by crafting
+ a special SMB packet and deducing information from the server’s 
+response. The second technique, which has less limitations, does that by
+ sending specially crafted compressed data and deducing information 
+depending on whether the server drops the connection.</p>
+<p>The next thing we had to understand was: what can be done with this 
+reading ability? As a reminder, we began this research with a 
+write-what-where primitive that we demonstrated in our <a rel="noreferrer noopener" href="https://blog.zecops.com/vulnerabilities/exploiting-smbghost-cve-2020-0796-for-a-local-privilege-escalation-writeup-and-poc/" target="_blank">previous research</a>
+ about achieving local privilege escalation. Since most of the memory 
+layout in the modern Windows versions is randomized, we need to have at 
+least one pointer to be able to do something useful with the 
+write-what-where primitive. Unfortunately, memory allocated with the 
+SrvNetAllocateBuffer function is mostly used for network data such as 
+SMB packets and doesn’t contain system pointers. We could try and read 
+uninitialized memory left by a previous allocation that wasn’t done with
+ SrvNetAllocateBuffer, but it would be difficult to predict where to 
+look for a pointer in this case, especially since we can’t run code on 
+the target computer that could help us grooming the pool (unlike in the 
+case of a local privilege escalation, for example). So we started 
+looking for something more reliable.</p>
+<h2>SrvNetAllocateBuffer and the allocated buffer layout</h2>
+<p>As we already mentioned in our local privilege escalation research, 
+the SrvNetAllocateBuffer function doesn’t just return a buffer with the 
+requested size. Instead, it returns a pointer to a struct that is 
+located at the bottom of the pool-allocated memory block, containing 
+information about the allocated buffer. The layout of the pool-allocated
+ memory block is the following:</p>
+<div class="wp-block-image"><figure class="aligncenter size-large"><img src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/smbleed-3-SrvNetAllocateBuffer-1.png" alt="" class="wp-image-1206"></figure></div>
+<p></p>
+<p>While our reading technique can only read bytes from the “User 
+buffer” region, we can use the integer overflow bug to copy parts of the
+ SRVNET_BUFFER_HDR struct to the “User buffer” region of another buffer,
+ which we can then read. We can do that by setting the Offset field to 
+point at the SRVNET_BUFFER_HDR struct beyond the data we want to read. 
+We just need to make sure that the data that is located there can be 
+interpreted as valid compressed data, otherwise the copying won’t 
+happen.</p>
+<div class="wp-block-image"><figure class="aligncenter size-large"><img src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/smbleed-3-AllocatedBufferLayout-2.png" alt="" class="wp-image-1207"></figure></div>
+<p></p>
+<h2>Hunting for pointers</h2>
+<p>Let’s take a look at the fields of the SRVNET_BUFFER_HDR struct and see whether there’s something worth reading:</p>
+<div><div id="highlighter_534401" class="syntaxhighlighter nice-code-block objc"><table cellspacing="0" cellpadding="0" border="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">01</div><div class="line number2 index1 alt1">02</div><div class="line number3 index2 alt2">03</div><div class="line number4 index3 alt1">04</div><div class="line number5 index4 alt2">05</div><div class="line number6 index5 alt1">06</div><div class="line number7 index6 alt2">07</div><div class="line number8 index7 alt1">08</div><div class="line number9 index8 alt2">09</div><div class="line number10 index9 alt1">10</div><div class="line number11 index10 alt2">11</div><div class="line number12 index11 alt1">12</div><div class="line number13 index12 alt2">13</div><div class="line number14 index13 alt1">14</div><div class="line number15 index14 alt2">15</div><div class="line number16 index15 alt1">16</div><div class="line number17 index16 alt2">17</div><div class="line number18 index17 alt1">18</div><div class="line number19 index18 alt2">19</div><div class="line number20 index19 alt1">20</div><div class="line number21 index20 alt2">21</div><div class="line number22 index21 alt1">22</div><div class="line number23 index22 alt2">23</div><div class="line number24 index23 alt1">24</div><div class="line number25 index24 alt2">25</div><div class="line number26 index25 alt1">26</div><div class="line number27 index26 alt2">27</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="objc preprocessor">#pragma pack(push, 1)</code></div><div class="line number2 index1 alt1"><code class="objc keyword">struct</code> <code class="objc plain">SRVNET_BUFFER_HDR {</code></div><div class="line number3 index2 alt2"><code class="objc comment">/*00*/</code>&nbsp; <code class="objc plain"><span style="color: orange;">LIST_ENTRY ConnectionBufferList;</span></code></div><div class="line number4 index3 alt1"><code class="objc comment">/*10*/</code>&nbsp; <code class="objc plain">WORD BufferFlags; </code><code class="objc comment">// 0x01 - no transport header, 0x02 - part of a lookaside list</code></div><div class="line number5 index4 alt2"><code class="objc comment">/*12*/</code>&nbsp; <code class="objc plain">WORD LookasideListIndex; </code><code class="objc comment">// 0 to 8</code></div><div class="line number6 index5 alt1"><code class="objc comment">/*14*/</code>&nbsp; <code class="objc plain">WORD LookasideListLogicalProcessor;</code></div><div class="line number7 index6 alt2"><code class="objc comment">/*16*/</code>&nbsp; <code class="objc plain">WORD TracingDataCount; </code><code class="objc comment">// 0, 1 or 2, for TracingPtr1/2, TracingUnknown1/2</code></div><div class="line number8 index7 alt1"><code class="objc comment">/*18*/</code>&nbsp; <code class="objc plain"><span style="color: #4f4ef9;">PBYTE UserBufferPtr;</span></code></div><div class="line number9 index8 alt2"><code class="objc comment">/*20*/</code>&nbsp; <code class="objc plain">DWORD UserBufferSizeAllocated;</code></div><div class="line number10 index9 alt1"><code class="objc comment">/*24*/</code>&nbsp; <code class="objc plain">DWORD UserBufferSizeUsed;</code></div><div class="line number11 index10 alt2"><code class="objc comment">/*28*/</code>&nbsp; <code class="objc plain">DWORD PoolAllocationSize;</code></div><div class="line number12 index11 alt1"><code class="objc comment">/*2C*/</code>&nbsp; <code class="objc plain">BYTE unknown1[4];</code></div><div class="line number13 index12 alt2"><code class="objc comment">/*30*/</code>&nbsp; <code class="objc plain"><span style="color: #4f4ef9;">PBYTE PoolAllocationPtr;</span></code></div><div class="line number14 index13 alt1"><code class="objc comment">/*38*/</code>&nbsp; <code class="objc plain"><span style="color: #4f4ef9;">PMDL pMdl1;</span></code></div><div class="line number15 index14 alt2"><code class="objc comment">/*40*/</code>&nbsp; <code class="objc plain">DWORD BytesProcessed;</code></div><div class="line number16 index15 alt1"><code class="objc comment">/*44*/</code>&nbsp; <code class="objc plain">BYTE unknown2[4];</code></div><div class="line number17 index16 alt2"><code class="objc comment">/*48*/</code>&nbsp; <code class="objc plain">SIZE_T BytesReceived;</code></div><div class="line number18 index17 alt1"><code class="objc comment">/*50*/</code>&nbsp; <code class="objc plain"><span style="color: #4f4ef9;">PMDL pMdl2;</span></code></div><div class="line number19 index18 alt2"><code class="objc comment">/*58*/</code>&nbsp; <code class="objc plain"><span style="color: orange;">PVOID pSrvNetWskStruct;</span></code></div><div class="line number20 index19 alt1"><code class="objc comment">/*60*/</code>&nbsp; <code class="objc plain">DWORD SmbFlags;</code></div><div class="line number21 index20 alt2"><code class="objc comment">/*64*/</code>&nbsp; <code class="objc plain"><span style="color: orange;">PVOID TracingPtr1;</span></code></div><div class="line number22 index21 alt1"><code class="objc comment">/*6C*/</code>&nbsp; <code class="objc plain">SIZE_T TracingUnknown1;</code></div><div class="line number23 index22 alt2"><code class="objc comment">/*74*/</code>&nbsp; <code class="objc plain"><span style="color: orange;">PVOID TracingPtr2;</span></code></div><div class="line number24 index23 alt1"><code class="objc comment">/*7C*/</code>&nbsp; <code class="objc plain">SIZE_T TracingUnknown2;</code></div><div class="line number25 index24 alt2"><code class="objc comment">/*84*/</code>&nbsp; <code class="objc plain">BYTE unknown3[12];</code></div><div class="line number26 index25 alt1"><code class="objc plain">};</code></div><div class="line number27 index26 alt2"><code class="objc preprocessor">#pragma pack(pop)</code></div></div></td></tr></tbody></table></div></div>
+<script>
+setTimeout(function orangeAndBlueColors() {
+    var sh = document.getElementsByClassName('syntaxhighlighter');
+    if (sh.length > 0) {
+        sh[0].querySelectorAll('.objc.plain').forEach(function (el) {
+            el.innerHTML = el.innerHTML.replace(/^\(orange\) (.*)$/, '<span style="color: orange;">$1</span>');
+            el.innerHTML = el.innerHTML.replace(/^\(blue\) (.*)$/, '<span style="color: #4f4ef9;">$1</span>');
+        });
+    } else {
+        setTimeout(orangeAndBlueColors, 100);
+    }
+}, 100);
+</script>
+<p>The colored variables are pointers. The blue-colored pointers all 
+point inside the pool-allocated memory block, with offsets which can be 
+calculated in advance, so it’s enough to read one of them. Having an 
+absolute pointer to the pool-allocated memory block will surely be 
+helpful. Regarding the orange-colored pointers:</p>
+<ul><li><strong>ConnectionBufferList</strong> – A linked list of all of 
+the received, unhandled buffers of a connection. The list head is a part
+ of the connection object created by the SrvNetAllocateConnection 
+function in srvnet.sys. A buffer is added to the list by the 
+SrvNetWskReceiveComplete function. In our case, there will be only one 
+buffer in the list, so both pointers (Flink and Blink of the LIST_ENTRY 
+struct) will point to the list head inside the connection object.</li><li><strong>pSrvNetWskStruct</strong>
+ – Initially, a pointer to the connection object mentioned above. The 
+pointer is set by the SrvNetWskReceiveEvent function, but is overridden 
+by the SrvNetWskReceiveComplete function with the pointer to the 
+SRVNET_BUFFER_HDR struct. Thus, reading it is not more useful than 
+reading one of the other blue-colored pointers. By the way, if you 
+search for “pSrvNetWskStruct“ you’ll find out that it played a role in 
+exploiting EternalBlue.</li><li><strong>TracingPtr1/2</strong> – These pointers are only used when tracing is enabled, as it seems.</li></ul>
+<div class="wp-block-image"><figure class="aligncenter size-large"><img src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/smbleed-3-HuntingPointers-3.png" alt="" class="wp-image-1208"></figure></div>
+<p></p>
+<p>As you can see, the only other useful pointer for us to read is one 
+of the pointers from the ConnectionBufferList struct. Both pointers 
+(Blink and Flink of the LIST_ENTRY struct) point to the connection 
+object. The object struct has been named SRVNET_RECV by EternalBlue 
+researchers, so we’ll use this name as well.</p>
+<h2>Getting a module base address</h2>
+<p>Now that we know how to get the two pointers – a pointer to a 
+pool-allocated memory block and a pointer to an SRVNET_RECV struct – we 
+can freely modify the two buffers using the write-what-where primitive. 
+There are probably several ways from this point to achieve RCE, but we 
+had a feeling that getting a base address of a module would be the most 
+straightforward option since there are so many things we can modify in a
+ data section of a module. As we’ve seen, none of the pointers in a 
+memory block allocated by SrvNetAllocateBuffer point to a module. We had
+ hopes for the SRVNET_RECV struct, but we didn’t find pointers that 
+point to a module there, too. On the bright side, there are several 
+pointers to modules one additional dereference away:</p>
+<div class="wp-block-image"><figure class="aligncenter size-large"><img src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/smbleed-3-ModuleBaseAddress-4.png" alt="" class="wp-image-1209"></figure></div>
+<p></p>
+<p>At this point, we noticed that since we can override those pointers 
+in SRVNET_RECT, we can call an arbitrary function by replacing the 
+HandlerFunctions pointer and triggering one of the events, e.g. closing 
+the connection so that Srv2DisconnectHandler is called. This will come 
+in handy later, but we didn’t have any function pointers to call yet, so
+ we continued with our attempt to get a module base address.</p>
+<p>Unlike writing, reading those pointers is not as easy since our 
+technique allows us to read only from the “User buffer” region. So 
+close, yet so far. Since we can get and modify a pool-allocated memory 
+block and an SRVNET_RECV struct, we hoped to find code that we can 
+trigger that does a double-dereference-read followed by a 
+double-dereference-write with two variables that we control, similar to 
+the following:</p>
+<div><div id="highlighter_873629" class="syntaxhighlighter nice-code-block objc"><table cellspacing="0" cellpadding="0" border="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div><div class="line number2 index1 alt1">2</div><div class="line number3 index2 alt2">3</div><div class="line number4 index3 alt1">4</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="objc plain">ptr1 = *(pSrvNetRecv + offset1)</code></div><div class="line number2 index1 alt1"><code class="objc plain">value = *ptr1</code></div><div class="line number3 index2 alt2"><code class="objc plain">ptr2 = *(pSrvNetRecv + offset2)</code></div><div class="line number4 index3 alt1"><code class="objc plain">*ptr2 = value</code></div></div></td></tr></tbody></table></div></div>
+<p>If we could find such a snippet, we would trigger it to copy the 
+first pointer (e.g. HandlerFunctions) to the “User buffer” region, read 
+it, then copy the second pointer (e.g. the Srv2ConnectHandler function 
+pointer) to the “User buffer” region and read it as well, deducing the 
+module base address from it. We searched for such a snippet for a long 
+time, but didn’t find a good match. Finally, we settled for a 
+sub-optimal option which nevertheless worked. Let’s take a look at the 
+relevant part of the SrvNetFreeBuffer function (simplified):</p>
+<div><div id="highlighter_555953" class="syntaxhighlighter nice-code-block objc"><table cellspacing="0" cellpadding="0" border="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">01</div><div class="line number2 index1 alt1">02</div><div class="line number3 index2 alt2">03</div><div class="line number4 index3 alt1">04</div><div class="line number5 index4 alt2">05</div><div class="line number6 index5 alt1">06</div><div class="line number7 index6 alt2">07</div><div class="line number8 index7 alt1">08</div><div class="line number9 index8 alt2">09</div><div class="line number10 index9 alt1">10</div><div class="line number11 index10 alt2">11</div><div class="line number12 index11 alt1">12</div><div class="line number13 index12 alt2">13</div><div class="line number14 index13 alt1">14</div><div class="line number15 index14 alt2">15</div><div class="line number16 index15 alt1">16</div><div class="line number17 index16 alt2">17</div><div class="line number18 index17 alt1">18</div><div class="line number19 index18 alt2">19</div><div class="line number20 index19 alt1">20</div><div class="line number21 index20 alt2">21</div><div class="line number22 index21 alt1">22</div><div class="line number23 index22 alt2">23</div><div class="line number24 index23 alt1">24</div><div class="line number25 index24 alt2">25</div><div class="line number26 index25 alt1">26</div><div class="line number27 index26 alt2">27</div><div class="line number28 index27 alt1">28</div><div class="line number29 index28 alt2">29</div><div class="line number30 index29 alt1">30</div><div class="line number31 index30 alt2">31</div><div class="line number32 index31 alt1">32</div><div class="line number33 index32 alt2">33</div><div class="line number34 index33 alt1">34</div><div class="line number35 index34 alt2">35</div><div class="line number36 index35 alt1">36</div><div class="line number37 index36 alt2">37</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="objc datatypes">void</code> <code class="objc plain">SrvNetFreeBuffer(PSRVNET_BUFFER_HDR Buffer)</code></div><div class="line number2 index1 alt1"><code class="objc plain">{</code></div><div class="line number3 index2 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">PMDL pMdl1 = Buffer-&gt;pMdl1;</code></div><div class="line number4 index3 alt1"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">PMDL pMdl2 = Buffer-&gt;pMdl2;</code></div><div class="line number5 index4 alt2">&nbsp;</div><div class="line number6 index5 alt1"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc keyword">if</code> <code class="objc plain">(pMdl2-&gt;MdlFlags &amp; 0x0020) {</code></div><div class="line number7 index6 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc comment">// MDL_PARTIAL_HAS_BEEN_MAPPED flag is set.</code></div><div class="line number8 index7 alt1"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">MmUnmapLockedPages(pMdl2-&gt;MappedSystemVa, pMdl2);</code></div><div class="line number9 index8 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">}</code></div><div class="line number10 index9 alt1">&nbsp;</div><div class="line number11 index10 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc keyword">if</code> <code class="objc plain">(Buffer-&gt;BufferFlags &amp; 0x02) {</code></div><div class="line number12 index11 alt1"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc keyword">if</code> <code class="objc plain">(Buffer-&gt;BufferFlags &amp; 0x01) {</code></div><div class="line number13 index12 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">pMdl1-&gt;MappedSystemVa = (BYTE*)pMdl1-&gt;MappedSystemVa + 0x50;</code></div><div class="line number14 index13 alt1"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">pMdl1-&gt;ByteCount -= 0x50;</code></div><div class="line number15 index14 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">pMdl1-&gt;ByteOffset += 0x50;</code></div><div class="line number16 index15 alt1"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">pMdl1-&gt;MdlFlags |= 0x1000; </code><code class="objc comment">// MDL_NETWORK_HEADER</code></div><div class="line number17 index16 alt2">&nbsp;</div><div class="line number18 index17 alt1"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">pMdl2-&gt;StartVa = (PVOID)((ULONG_PTR)pMdl1-&gt;MappedSystemVa &amp; ~0xFFF);</code></div><div class="line number19 index18 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">pMdl2-&gt;ByteCount = pMdl1-&gt;ByteCount;</code></div><div class="line number20 index19 alt1"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">pMdl2-&gt;ByteOffset = pMdl1-&gt;MappedSystemVa &amp; 0xFFF;</code></div><div class="line number21 index20 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">pMdl2-&gt;Size = </code><code class="objc comment">/* some calculation */</code><code class="objc plain">;</code></div><div class="line number22 index21 alt1"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">pMdl2-&gt;MdlFlags = 0x0004; </code><code class="objc comment">// MDL_SOURCE_IS_NONPAGED_POOL</code></div><div class="line number23 index22 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">}</code></div><div class="line number24 index23 alt1">&nbsp;</div><div class="line number25 index24 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">Buffer-&gt;BufferFlags = 0;</code></div><div class="line number26 index25 alt1">&nbsp;</div><div class="line number27 index26 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc comment">// ...</code></div><div class="line number28 index27 alt1">&nbsp;</div><div class="line number29 index28 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">pMdl1-&gt;Next = </code><code class="objc keyword">NULL</code><code class="objc plain">;</code></div><div class="line number30 index29 alt1"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">pMdl2-&gt;Next = </code><code class="objc keyword">NULL</code><code class="objc plain">;</code></div><div class="line number31 index30 alt2">&nbsp;</div><div class="line number32 index31 alt1"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc comment">// Return the buffer to the lookaside list.</code></div><div class="line number33 index32 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">} </code><code class="objc keyword">else</code> <code class="objc plain">{</code></div><div class="line number34 index33 alt1"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">SrvNetUpdateMemStatistics(NonPagedPoolNx, Buffer-&gt;PoolAllocationSize, FALSE);</code></div><div class="line number35 index34 alt2"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">ExFreePoolWithTag(Buffer-&gt;PoolAllocationPtr, </code><code class="objc string">'00SL'</code><code class="objc plain">);</code></div><div class="line number36 index35 alt1"><code class="objc spaces">&nbsp;&nbsp;&nbsp;&nbsp;</code><code class="objc plain">}</code></div><div class="line number37 index36 alt2"><code class="objc plain">}</code></div></div></td></tr></tbody></table></div></div>
+<p>Upon freeing the buffer, if buffer flags 0x02 (means the buffer is 
+part of a lookaside list) and 0x01 (means the buffer has no transport 
+header) are set, some operations are made on the two MDL objects to add 
+the transport header before resetting the flags to zero and returning 
+the buffer back to the lookaside list. If we set aside the meaning 
+behind the operations on the MDL objects for a moment and look at the 
+operations in terms of memory manipulation, we can notice that the code 
+does a double-dereference-read followed by a double-dereference-write 
+with two variables that we control (the two MDL pointers), which is what
+ we were looking for. The downside is that the content that we want to 
+read from is also modified (lines 13-16, 29), a side effect we hoped to 
+avoid.</p>
+<p>Given the above, here’s how we managed to read the AcceptSocket pointer:</p>
+<p>1. Prepare buffer A from a lookaside list such that the “User buffer”
+ region is filled with zeros. This buffer will end up holding the 
+pointer that we’ll eventually read.</p>
+<p>2. Prepare buffer B from a different lookaside list such that:</p>
+<ul><li>The pMdl1 pointer points at the address of the HandlerFunctions 
+pointer minus 0x18, the offset of MappedSystemVa in the MDL struct.</li><li>The pMdl2 pointer points at the “User buffer” region of Buffer A.</li><li>The Flags field is set to 0x03.</li></ul>
+<p>We can override the SRVNET_BUFFER_HDR struct fields by decompressing 
+them from a larger buffer using the technique described in the 
+Observation #2 section of the previous part of the writeup.</p>
+<p>3. When buffer B is freed, the following operations will take place:</p>
+<ul><li>The MDL flags will be read from the second MDL at buffer A. If 
+the MDL_PARTIAL_HAS_BEEN_MAPPED flag is set, MmUnmapLockedPages will be 
+called and the system will likely crash. That’s why we filled the buffer
+ with zeros in step 1.</li></ul>
+<ul><li>The HandlerFunctions pointer and the memory around it will be modified as depicted here:</li></ul>
+<div><div id="highlighter_617940" class="syntaxhighlighter nice-code-block objc"><table cellspacing="0" cellpadding="0" border="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div><div class="line number2 index1 alt1">2</div><div class="line number3 index2 alt2">3</div><div class="line number4 index3 alt1">4</div><div class="line number5 index4 alt2">5</div><div class="line number6 index5 alt1">6</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="objc plain">+00 |&nbsp; 00 00 00 00 00 00 00 00</code></div><div class="line number2 index1 alt1"><code class="objc plain">+08 |&nbsp; __ __ __|10 __ __ __ __</code></div><div class="line number3 index2 alt2"><code class="objc plain">+10 |&nbsp; __ __ __ __ __ __ __ __</code></div><div class="line number4 index3 alt1"><code class="objc plain">+18 |&nbsp; [+50..................]&nbsp; &lt;--&nbsp; HandlerFunctions</code></div><div class="line number5 index4 alt2"><code class="objc plain">+20 |&nbsp; __ __ __ __ __ __ __ __</code></div><div class="line number6 index5 alt1"><code class="objc plain">+28 |&nbsp; [-50......] [+50......]</code></div></div></td></tr></tbody></table></div></div>
+<ul><li>The HandlerFunctions pointer and the memory around it will be read as depicted here:</li></ul>
+<div><div id="highlighter_148395" class="syntaxhighlighter nice-code-block objc"><table cellspacing="0" cellpadding="0" border="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div><div class="line number2 index1 alt1">2</div><div class="line number3 index2 alt2">3</div><div class="line number4 index3 alt1">4</div><div class="line number5 index4 alt2">5</div><div class="line number6 index5 alt1">6</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="objc plain">+00 |&nbsp; __ __ __ __ __ __ __ __</code></div><div class="line number2 index1 alt1"><code class="objc plain">+08 |&nbsp; __ __ __ __ __ __ __ __</code></div><div class="line number3 index2 alt2"><code class="objc plain">+10 |&nbsp; __ __ __ __ __ __ __ __</code></div><div class="line number4 index3 alt1"><code class="objc plain">+18 |&nbsp; ab cd ef gh ij kl mn op&nbsp; &lt;--&nbsp; HandlerFunctions</code></div><div class="line number5 index4 alt2"><code class="objc plain">+20 |&nbsp; __ __ __ __ __ __ __ __</code></div><div class="line number6 index5 alt1"><code class="objc plain">+28 |&nbsp; qr st uv wx __ __ __ __</code></div></div></td></tr></tbody></table></div></div>
+<ul><li>The “User buffer” region of buffer A will be modified as 
+depicted here: (The orange-colored bytes contain the pointer we want to 
+read. We just need to order them properly.)</li></ul>
+<div><div id="highlighter_675821" class="syntaxhighlighter nice-code-block objc"><table cellspacing="0" cellpadding="0" border="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div><div class="line number2 index1 alt1">2</div><div class="line number3 index2 alt2">3</div><div class="line number4 index3 alt1">4</div><div class="line number5 index4 alt2">5</div><div class="line number6 index5 alt1">6</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="objc plain">+00 |&nbsp; 00 00 00 00 00 00 00 00</code></div><div class="line number2 index1 alt1"><code class="objc plain">+08 |&nbsp; ?? ?? 04 00 __ __ __ __</code></div><div class="line number3 index2 alt2"><code class="objc plain">+10 |&nbsp; __ __ __ __ __ __ __ __</code></div><div class="line number4 index3 alt1"><code class="objc plain">+18 |&nbsp; __ __ __ __ __ __ __ __</code></div><div class="line number5 index4 alt2"><code class="objc plain">+20 |&nbsp; 00 <span style="color: orange;">c</span>0 <span style="color: orange;">ef gh ij kl mn op</span></code></div><div class="line number6 index5 alt1"><code class="objc plain">+28 |&nbsp; qr st uv wx <span style="color: orange;">ab</span> 0<span style="color: orange;">d</span> 00 00</code></div></div></td></tr></tbody></table></div></div>
+<script>
+setTimeout(function orangeColors() {
+    var sh = document.getElementsByClassName('syntaxhighlighter');
+    if (sh.length > 5) {
+        sh[5].querySelectorAll('.objc.plain').forEach(function (el) {
+            el.innerHTML = el.innerHTML.replace(/\{(.*?)\}/g, '<span style="color: orange;">$1</span>');
+        });
+    } else {
+        setTimeout(orangeColors, 100);
+    }
+}, 100);
+</script>
+<p>4. Read the AcceptSocket pointer from the “User buffer” region of buffer A.</p>
+<p>The good news: we managed to read the pointer. The bad news: we 
+corrupted some data in the SRVNET_RECT struct. Luckily for us, the 
+corruption doesn’t affect the system as long as nothing happens with the
+ relevant connection. When something does happen, e.g. the connection 
+closes, the system crashes. That’s not a problem since we’ll get RCE 
+soon, and we can fix the corruption if we want to. We didn’t implement 
+such a fix in our POC and such fix was left as an exercise for the 
+reader.</p>
+<p>After reading the AcceptSocket pointer, we used the same technique to
+ read the srvnet!SrvNetWskConnDispatch pointer. We read the AcceptSocket
+ pointer and not the HandlerFunctions pointer since the array of handler
+ functions is shared between all connections, while the buffer pointed 
+by AcceptSocket is not shared with other connections. Therefore, we can 
+corrupt the latter, affecting the stability of only a single connection.</p>
+<p>If we have a copy of the srvnet.sys file used on the target computer,
+ we can just compute the offset of the SrvNetWskConnDispatch pointer in 
+the module locally and subtract the offset from the pointer we read, 
+getting the srvnet.sys module base address as a result. That’s what we 
+did in our POC to keep things simple. One can improve it to be more 
+general. One option that comes to mind is keeping several versions of 
+srvnet.sys locally, and deducing the correct one by the least 
+significant bytes of the read pointer.</p>
+<h2>Implementing arbitrary read</h2>
+<p>From the beginning of this research we had a convenient 
+write-what-where (arbitrary write) primitive, but had nothing that 
+allowed us to read memory. We worked hard until now to gain some memory 
+reading abilities, and at this point we felt that we had enough tools to
+ make our life easier and implement a convenient arbitrary read 
+primitive. We began by exploring the possibilities of calling an 
+arbitrary function.</p>
+<p>Given that we have the base address of the srvnet.sys module, we can 
+call any of the module’s functions. But what about the function’s 
+arguments? The srv2!Srv2ReceiveHandler function is called by 
+SrvNetCommonReceiveHandler, and the call looks like this:</p>
+<div><div id="highlighter_668827" class="syntaxhighlighter nice-code-block objc"><table cellspacing="0" cellpadding="0" border="0"><tbody><tr><td class="gutter"><div class="line number1 index0 alt2">1</div><div class="line number2 index1 alt1">2</div><div class="line number3 index2 alt2">3</div><div class="line number4 index3 alt1">4</div></td><td class="code"><div class="container"><div class="line number1 index0 alt2"><code class="objc plain">HandlerFunctions = *(pSrvNetRecv + 0x118);</code></div><div class="line number2 index1 alt1"><code class="objc plain">Arg1 = *(ULONG_PTR)(pSrvNetRecv + 0x128);</code></div><div class="line number3 index2 alt2"><code class="objc plain">Arg2 = *(ULONG_PTR)(pSrvNetRecv + 0x130);</code></div><div class="line number4 index3 alt1"><code class="objc plain">(HandlerFunctions[1])(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8);</code></div></div></td></tr></tbody></table></div></div>
+<p>The first two arguments are read from the SRVNET_RECT struct, so we 
+can control them. We don’t have as much control over the other 
+arguments. The x86-64 calling convention specifies that it’s the 
+caller’s responsibility to allocate and free the stack space for the 
+arguments, so even though a 8-arguments function is intended to be 
+called, we can replace the pointer with a function that expects any 
+other amount of arguments, and it will work.</p>
+<div class="wp-block-image"><figure class="aligncenter size-large"><img src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/smbleed-3-ArbitraryRead-5.png" alt="" class="wp-image-1210"></figure></div>
+<p></p>
+<p>Here are the steps we used to trigger the function call:</p>
+<ol><li>Send a specially crafted message so that the connection’s SRVNET_RECT struct pointer will be copied to a buffer we can read.</li><li>Send
+ another, valid message, which will reuse the same SRVNET_RECT struct, 
+but don’t close the connection yet. Note that when a connection is 
+closed, the SRVNET_RECT struct is not freed. The 
+SrvNetPrepareConnectionForReuse function is called to reset the struct 
+so that it can be reused for the next connection.</li><li>Read the SRVNET_RECT struct pointer that we copied in step 1.</li><li>Replace the HandlerFunctions pointer and the arguments using the write-what-where primitive.</li><li>Send
+ an additional message over the connection from step 2 so that the 
+function that took the place of srv2!Srv2ReceiveHandler is called.</li></ol>
+<p>Now all we had to do was to find a convenient function to copy memory
+ from one location to another, so that we can copy arbitrary memory to 
+the pool buffer we can read from. memcpy comes to mind, and srvnet.sys 
+does have such a function (memmove, to be precise), but this function 
+requires a third argument, the amount of bytes to be copied, which we 
+don’t control. Failing to find a convenient function that requires one 
+or two arguments, we realized that we’re not limited by functions 
+implemented in srvnet.sys, we can also call functions from srvnet’s 
+import table by pointing HandlerFunctions at the right offset. There, we
+ found the perfect function: RtlCopyUnicodeString.</p>
+<p>The RtlCopyUnicodeString function gets two UNICODE_STRING pointers as
+ arguments, and copies the content of the source string to the 
+destination string. Unlike C strings which are NULL-terminated, strings 
+in the kernel are defined by the UNICODE_STRING struct which holds a 
+pointer to the string, and the string’s length in bytes. The string 
+buffer can hold any binary data. If you peek at the implementation of 
+RtlCopyUnicodeString, you can see that the copying is done with the 
+memmove function, i.e. plain binary data copying. All we have to do is 
+prepare our two UNICODE_STRING structs and call RtlCopyUnicodeString, 
+then read the copied data:</p>
+<div class="wp-block-image"><figure class="aligncenter size-large"><img src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/smbleed-3-ArbitraryRead-6.png" alt="" class="wp-image-1211"></figure></div>
+<p></p>
+<h2>Executing shellcode</h2>
+<p>After achieving a convenient arbitrary read primitive, we moved on to
+ the next challenge towards our goal of remote code execution: running a
+ shellcode. We used the technique that Morten Schenk presented in his <a rel="noreferrer noopener" href="https://www.blackhat.com/docs/us-17/wednesday/us-17-Schenk-Taking-Windows-10-Kernel-Exploitation-To-The-Next-Level%E2%80%93Leveraging-Write-What-Where-Vulnerabilities-In-Creators-Update.pdf" target="_blank">Black Hat USA 2017 talk</a> (pages 47-51).</p>
+<p>The idea is to write a shellcode below the KUSER_SHARED_DATA 
+structure which is located at a constant address, the only address that 
+is not randomized in the kernel memory layout of the recent Windows 
+versions. Then modify the relevant page table entry, making the page 
+executable. The base address of the page table entries in the kernel is 
+randomized, but can be retrieved from the MiGetPteAddress function in 
+ntoskrnl.exe. Here are the steps we used to execute our shellcode:</p>
+<ol><li>Use our arbitrary read primitive to get the base address of ntoskrnl.exe from srvnet’s import table.</li><li>Read the base address of the page table entries from the MiGetPteAddress function, as described in Morten’s slides.</li><li>Write
+ the shellcode at address KUSER_SHARED_DATA + 0x800 
+(0xFFFFF78000000800). Note that we could also use one of the pool 
+buffers, using KUSER_SHARED_DATA is just more convenient.</li><li>Calculate the relevant page table entry address and clear the NX bit to allow execution, as described in Morten’s slides.</li><li>Call the shellcode using our ability to call an arbitrary function.</li></ol>
+<h2>Launching a reverse shell</h2>
+<p>Technically, we achieved remote code execution, so we could stop 
+here. But if we’re not popping calc or launching a reverse shell, the 
+POC is not complete, so we went on to fill that gap. Since our shellcode
+ runs in kernel mode, we can’t just run cmd.exe or calc.exe and call it a
+ day. We needed to find a way to get our code to run in user mode. While
+ searching for prior work on the topic we found <a rel="noreferrer noopener" href="https://github.com/worawit/MS17-010/tree/master/shellcode" target="_blank">sleepya’s shellcode</a>, written originally for EternalBlue exploits, which is designed to do just that.&nbsp;</p>
+<p>In short, here’s what the shellcode does:</p>
+<ol><li>Hook IA32_LSTAR MSR to lower the IRQL (Interrupt Request Level) 
+from DISPATCH_LEVEL to PASSIVE_LEVEL. The shellcode begins execution at 
+the DISPATCH_LEVEL IRQL which imposes several limitations. For more 
+information see <a href="https://zerosum0x0.blogspot.com/2019/11/fixing-remote-windows-kernel-payloads-meltdown.html#kva_ia32lstar" target="_blank" rel="noreferrer noopener">the great explanation of zerosum0x0</a>.</li><li>Find
+ a privileged user mode process (lsass.exe or spoolsv.exe) and queue a 
+user mode APC in one of the alertable threads that is in waiting state.</li><li>In
+ the APC kernel routine, allocate EXECUTE_READWRITE memory and point the
+ APC normal (user mode) routine there. Then copy the user mode shellcode
+ to the newly allocated memory, prepended with a stub to create a new 
+thread.</li><li>In the APC normal routine a new thread is created, executing the user mode shellcode.</li></ol>
+<p>Published about three years ago, the shellcode didn’t work right away
+ on recent Windows versions, so we had to make a couple of adjustments:</p>
+<ol><li>Incompatibility with the <a href="https://msrc-blog.microsoft.com/2018/03/23/kva-shadow-mitigating-meltdown-on-windows/" target="_blank" rel="noreferrer noopener">KVA Shadow mitigation</a>. In the blog post <a href="https://zerosum0x0.blogspot.com/2019/11/fixing-remote-windows-kernel-payloads-meltdown.html" target="_blank" rel="noreferrer noopener">Fixing Remote Windows Kernel Payloads to Bypass Meltdown KVA Shadow</a>
+ zerosum0x0 explains why the first part of the shellcode, IA32_LSTAR MSR
+ hooking, isn’t supported when the KVA Shadow mitigation is enabled, and
+ proposes a fix. We tried the proposed fix, but it didn’t work on newer 
+Windows versions – zerosum0x0 targeted Windows 10 version 1809 while we 
+were targeting versions 1903 and 1909. The right thing to do is to 
+improve the fix or find another solution, but we just removed the IRQL 
+lowering part. As a result, the POC can sometimes crash the system while
+ trying to access paged memory (bug check IRQL_NOT_LESS_OR_EQUAL), but 
+it doesn’t happen often, so we left it as is since it’s good enough for a
+ POC.</li><li>Fixed finding the base address of ntoskrnl.exe. At first, we tried using <a href="https://github.com/rapid7/metasploit-framework/blob/129d15b8eb092b061e50f2e96a03b6a1a7b642b5/modules/exploits/windows/rdp/cve_2019_0708_bluekeep_rce.rb#L523-L537" target="_blank" rel="noreferrer noopener">zerosum0x0’s method</a>
+ – get an address of the first ISR (Interrupt Service Routine), which is
+ located in ntoskrnl.exe, and search for a nearby PE header. The method 
+didn’t work for us since the ISR pointer points to ntoskrnl’s INITKDBG 
+section which is not mapped. Since we already found the ntoskrnl.exe 
+base address, we fixed it by just passing it as an argument to the 
+shellcode.</li><li>Fixed a problem with finding the offset of 
+ETHREAD.ThreadListEntry. The original code looked for the current thread
+ in the thread list of the current process. The thread won’t be found if
+ the current thread is attached to a different process than the one it 
+was originally created in (see KeStackAttachProcess).</li><li>Fixed the 
+UserApcPending check in the KAPC_STATE struct for Windows 10 version R5 
+and newer. Since Windows 10 version R5 UserApcPending shares a byte with
+ the newly added bit value, SpecialUserApcPending.</li></ol>
+<p>With the above fixed, we finally managed to make the shellcode work, 
+we just needed to fill in the user mode part of the code to run. We used
+ MSFvenom, the Metasploit payload generator, to generate a user mode 
+shellcode to spawn a reverse shell.</p>
+<h2>Targets with more than one logical processor</h2>
+<p>In the Observation #1 section of the previous part of the writeup we 
+assumed that our target has only one logical processor. With this 
+assumption, we could rely on the lookaside lists buffer reusing, knowing
+ that we get the same buffer every time as long as the allocation size 
+is the same. As a reminder, the lookaside lists are created upon 
+initialization, a list for each size and logical processor, as depicted 
+in the following table:</p>
+<style type="text/css">
+.tg-wrapper {overflow:auto;}
+.tg  {border-collapse:collapse;border-spacing:0;margin-bottom:0;}
+.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-c3ow{border-color:inherit;text-align:center;vertical-align:top}
+.tg .tg-0pky{border-color:inherit;text-align:left;vertical-align:top}
+</style>
+<div class="tg-wrapper">
+<table class="tg">
+<thead>
+<tr>
+<th class="tg-0pky">→ Allocation size<br><br><span style="font-weight:400;font-style:normal">↓ </span>Logical Processor</th>
+<th class="tg-0pky">0x1100</th>
+<th class="tg-0pky">0x2100</th>
+<th class="tg-0pky">0x4100</th>
+<th class="tg-0pky">0x8100</th>
+<th class="tg-0pky">0x10100</th>
+<th class="tg-0pky">0x20100</th>
+<th class="tg-0pky">0x40100</th>
+<th class="tg-0pky">0x80100</th>
+<th class="tg-0pky">0x100100</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tg-0pky">Processor 1</td>
+<td class="tg-c3ow">📝</td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow">📝</td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+</tr>
+<tr>
+<td class="tg-0pky"><span style="font-weight:400;font-style:normal">Processor 2</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+</tr>
+<tr>
+<td class="tg-c3ow">…</td>
+<td class="tg-c3ow" colspan="9">…</td>
+</tr>
+<tr>
+<td class="tg-0pky"><span style="font-weight:400;font-style:normal">Processor n</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+<td class="tg-c3ow"><span style="font-weight:400;font-style:normal">📝</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p></p>
+<p>Each cell with the “📝” symbol is a separate lookaside list.</p>
+<p>With more than one logical processor, things are a bit more 
+complicated – we get the same buffer only as long as the allocation is 
+made on the same logical processor. Our first attempt at overcoming this
+ limitation was redundancy. When writing to one of the lookaside list 
+buffers, write multiple times. When reading from one of the lookaside 
+list buffers, read multiple times and choose the most common value. This
+ approach would work if the logical processor usage was distributed 
+evenly, but we found that it’s not the case. We tested our POC in 
+VirtualBox, and from our observations, some logical processors are 
+preferred over others. For a setup of 4 logical cores, here’s the 
+distribution of handling the incoming packet in a test execution:</p>
+<figure class="wp-block-table is-style-regular"><table><tbody><tr><td><strong>Logical processor</strong></td><td><strong>Incoming packets handled</strong></td></tr><tr><td>Logical processor 1</td><td>0.2%</td></tr><tr><td>Logical processor 2</td><td>0.8%</td></tr><tr><td>Logical processor 3</td><td>7.9%</td></tr><tr><td>Logical processor 4</td><td>91.1%</td></tr></tbody></table></figure>
+<p>Here’s the distribution of handling the decompression:</p>
+<figure class="wp-block-table is-style-regular"><table><tbody><tr><td><strong>Logical processor</strong></td><td><strong>Decompressions executed</strong></td></tr><tr><td>Logical processor 1</td><td>13.3%</td></tr><tr><td>Logical processor 2</td><td>5.1%</td></tr><tr><td>Logical processor 3</td><td>6.8%</td></tr><tr><td>Logical processor 4</td><td>74.8%</td></tr></tbody></table></figure>
+<p>As you can see, in this specific case logical processor 4 did most of
+ the work. Logical processor 1 handled only 1 out of every 500 incoming 
+packets!</p>
+<p>We tweaked the POC such that it sends several packets simultaneously 
+from multiple threads to improve the logical processor usage 
+distribution. We also added error detection, so that if the data that is
+ read doesn’t make sense, another reading attempt is made instead of 
+proceeding and most likely crashing the system. The changes we made were
+ enough to make the POC work with VirtualBox targets with multiple 
+logical processors, but from a quick test the POC doesn’t work with 
+VMware targets or (at least some) physical computers with multiple 
+logical processors. We didn’t try to improve the POC further to support 
+all targets, which we believe can be achieved with a better strategy for
+ a reading and writing order.</p>
+<div class="wp-block-image"><figure class="aligncenter size-large"><img src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/smbleed-3-poc-8.png" alt="" class="wp-image-1215"></figure></div>
+<p></p>
+<p>Our POC with the improvements can be found in <a href="https://github.com/ZecOps/CVE-2020-0796-RCE-POC" target="_blank" rel="noreferrer noopener">the GitHub repository</a>.</p>
+<p>If you’d like to study the code, we suggest starting with the 
+initial, less noisy version which was designed for a single logical 
+processor. It can be found in a <a rel="noreferrer noopener" href="https://github.com/ZecOps/CVE-2020-0796-RCE-POC/tree/c0f9f431655f7c10f92b53f410ee4e03955c973f" target="_blank">previous commit here</a>.</p>
+<h2>ZecOps Detection</h2>
+<p>ZecOps classify forensics logs related to this issue as #SMBGhost and
+ #SMBleed. You can find more information on how to use ZecOps solutions 
+for <a href="https://zecops.com/solutions/neutrino.html">Endpoints &amp; Servers</a>, <a href="https://zecops.com/solutions/gluon.html">Mobile devices</a>, or <a href="https://www.crashops.com/">applications</a>. Besides SMBleed / SMBGhost, <a href="https://www.zecops.com/">ZecOps Crash Forensics solutions</a>
+ can find other, previously unknown vulnerabilities, that are exploited 
+in the wild. If you care about persistent threats – we’ll be happy to 
+assist.</p>
+<h2>Remediation</h2>
+<p>You can remediate the impact of both issues by doing one of the following:</p>
+<ul><li>Applying the latest security issues (recommended)</li><li>Block port 445 / enforce host-isolation</li><li>Disable SMBv3.1.1 compression</li></ul>
+<h2>Summary</h2>
+<p>This is the third and final part of the writeup, in which we used the
+ findings from the previous parts to achieve RCE using SMBGhost and 
+SMBleed. We hope you enjoyed the read. Here’s a recap of the milestones 
+during our research on the SMB bugs:</p>
+<ol><li>A write-what-where primitive, demonstrated in our <a href="https://blog.zecops.com/vulnerabilities/exploiting-smbghost-cve-2020-0796-for-a-local-privilege-escalation-writeup-and-poc/">previous research</a> about achieving local privilege escalation.</li><li>The discovery of the SMBleed bug, described in <a href="https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-chaining-smbleed-cve-2020-1206-with-smbghost/">the first part of the writeup</a>.</li><li>An ability to read memory from the pool buffers allocated by the SrvNetAllocateBuffer function, demonstrated in <a href="https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-ii-unauthenticated-memory-read-preparing-the-ground-for-an-rce/">Part II: Unauthenticated Memory Read – Preparing the Ground for an RCE</a>.</li><li>An ability to get the base address of the srvnet.sys module.</li><li>An ability to call an arbitrary function.</li><li>Arbitrary memory read.</li><li>Shellcode execution.</li></ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="elementor-element elementor-element-b631fe9 elementor-section-boxed elementor-section-height-default elementor-section-height-default elementor-section elementor-top-section" data-id="b631fe9" data-element_type="section">
+<div class="elementor-container elementor-column-gap-default">
+<div class="elementor-row">
+<div class="elementor-element elementor-element-f14eb49 elementor-column elementor-col-33 elementor-top-column" data-id="f14eb49" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-6494467 elementor-widget elementor-widget-html" data-id="6494467" data-element_type="widget" data-widget_type="html.default">
+<div class="elementor-widget-container">
+<img src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/reverse-bounty.png" alt="reverse bounty">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="elementor-element elementor-element-a875ca4 elementor-column elementor-col-33 elementor-top-column" data-id="a875ca4" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-b03034f elementor-widget elementor-widget-html" data-id="b03034f" data-element_type="widget" data-widget_type="html.default">
+<div class="elementor-widget-container">
+<p><strong>Researcher? Analyst?</strong></p>
+<p>If you get excited about exploits reproduction like we do, you would love ZecOps Reverse Bounty program - details ahead!</p>
+<p><a href="https://www.zecops.com/reverse-bounty">Join Reverse Bounty™ &gt;</a></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="elementor-element elementor-element-835e41f elementor-column elementor-col-33 elementor-top-column" data-id="835e41f" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-de2111e elementor-widget elementor-widget-html" data-id="de2111e" data-element_type="widget" data-widget_type="html.default">
+<div class="elementor-widget-container">
+<p><strong>Partners, Resellers, Distributors and Innovative Security Teams</strong></p>
+<p>We’re still in stealth mode, but… we are already working with leading
+ organizations globally. If you wish to learn more about what we do and 
+what fresh vibes we bring to defensive cyber security, let’s get in 
+touch</p>
+<p><a href="https://www.zecops.com/contact-us">Contact Us &gt;</a></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<div class="elementor-element elementor-element-9dcec24 elementor-section-content-middle elementor-section-boxed elementor-section-height-default elementor-section-height-default elementor-section elementor-top-section" data-id="9dcec24" data-element_type="section">
+<div class="elementor-container elementor-column-gap-default">
+<div class="elementor-row">
+<div class="elementor-element elementor-element-3ed404f elementor-column elementor-col-33 elementor-top-column" data-id="3ed404f" data-element_type="column">
+<div class="elementor-column-wrap">
+<div class="elementor-widget-wrap">
+</div>
+</div>
+</div>
+<div class="elementor-element elementor-element-8107ebd elementor-column elementor-col-66 elementor-top-column" data-id="8107ebd" data-element_type="column">
+<div class="elementor-column-wrap">
+<div class="elementor-widget-wrap">
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<section class="elementor-element elementor-element-2110924 elementor-section-content-middle elementor-section-boxed elementor-section-height-default elementor-section-height-default elementor-section elementor-top-section" data-id="2110924" data-element_type="section">
+<div class="elementor-container elementor-column-gap-default">
+<div class="elementor-row">
+<div class="elementor-element elementor-element-bcb7679 elementor-column elementor-col-100 elementor-top-column" data-id="bcb7679" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-5812b2d elementor-widget elementor-widget-divider" data-id="5812b2d" data-element_type="widget" data-widget_type="divider.default">
+<div class="elementor-widget-container">
+<div class="elementor-divider">
+<span class="elementor-divider-separator">
+</span>
+</div>
+</div>
+</div>
+<section class="elementor-element elementor-element-5641d86 elementor-section-boxed elementor-section-height-default elementor-section-height-default elementor-section elementor-inner-section" data-id="5641d86" data-element_type="section">
+<div class="elementor-container elementor-column-gap-default">
+<div class="elementor-row">
+<div class="elementor-element elementor-element-a068aec elementor-column elementor-col-33 elementor-inner-column" data-id="a068aec" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-65a09d2 elementor-widget elementor-widget-heading" data-id="65a09d2" data-element_type="widget" data-widget_type="heading.default">
+<div class="elementor-widget-container">
+<h2 class="elementor-heading-title elementor-size-default">SHARE THIS ARTICLE</h2> </div>
+</div>
+</div>
+</div>
+</div>
+<div class="elementor-element elementor-element-c21f480 elementor-column elementor-col-66 elementor-inner-column" data-id="c21f480" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-3a77cb3 elementor-widget elementor-widget-html" data-id="3a77cb3" data-element_type="widget" data-widget_type="html.default">
+<div class="elementor-widget-container">
+<div class="sharethis-inline-share-buttons st-right st-has-labels  st-inline-share-buttons st-animated" id="st-3"><div class="st-total ">
+  <span class="st-label">657</span>
+  <span class="st-shares">
+    Shares
+  </span>
+</div><div class="st-btn st-first" data-network="facebook" style="display: inline-block;" data-title="SMBleedingGhost Writeup Part III: From Remote Read (SMBleed) to RCE - ZecOps Blog">
+  <img alt="facebook sharing button" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/facebook.svg">
+  <span class="st-label">28</span>
+</div><div class="st-btn" data-network="twitter" style="display: inline-block;">
+  <img alt="twitter sharing button" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/twitter.svg">
+  <span class="st-label">391</span>
+</div><div class="st-btn st-last" data-network="linkedin" style="display: inline-block;" data-title="SMBleedingGhost Writeup Part III: From Remote Read (SMBleed) to RCE - ZecOps Blog">
+  <img alt="linkedin sharing button" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/linkedin.svg">
+  <span class="st-label">18</span>
+</div></div> </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<div class="elementor-element elementor-element-2d99078 elementor-widget elementor-widget-divider" data-id="2d99078" data-element_type="widget" data-widget_type="divider.default">
+<div class="elementor-widget-container">
+<div class="elementor-divider">
+<span class="elementor-divider-separator">
+</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="elementor-element elementor-element-3db28eda elementor-section-boxed elementor-section-height-default elementor-section-height-default elementor-section elementor-top-section" data-id="3db28eda" data-element_type="section">
+<div class="elementor-container elementor-column-gap-default">
+<div class="elementor-row">
+<div class="elementor-element elementor-element-59b45c81 elementor-column elementor-col-100 elementor-top-column" data-id="59b45c81" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-43d43542 elementor-widget elementor-widget-post-navigation" data-id="43d43542" data-element_type="widget" data-widget_type="post-navigation.default">
+<div class="elementor-widget-container">
+<div class="elementor-post-navigation elementor-grid">
+<div class="elementor-post-navigation__prev elementor-post-navigation__link">
+<a href="https://blog.zecops.com/vulnerabilities/smbleedingghost-writeup-part-ii-unauthenticated-memory-read-preparing-the-ground-for-an-rce/" rel="prev"><span class="post-navigation__arrow-wrapper post-navigation__arrow-prev"><i class="fa fa-angle-left" aria-hidden="true"></i><span class="elementor-screen-only">Prev</span></span><span class="elementor-post-navigation__link__prev"><span class="post-navigation__prev--label">Previous</span><span class="post-navigation__prev--title">SMBleedingGhost Writeup Part II: Unauthenticated Memory Read – Preparing the Ground for an RCE</span></span></a> </div>
+<div class="elementor-post-navigation__next elementor-post-navigation__link">
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div> 
+</div>
+<div data-elementor-type="footer" data-elementor-id="66" class="elementor elementor-66 elementor-location-footer" data-elementor-settings="[]">
+<div class="elementor-inner">
+<div class="elementor-section-wrap">
+<section class="elementor-element elementor-element-2c8b1dd elementor-section-height-min-height elementor-section-content-middle elementor-section-boxed elementor-section-height-default elementor-section-items-middle elementor-section elementor-top-section" data-id="2c8b1dd" data-element_type="section" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
+<div class="elementor-container elementor-column-gap-default">
+<div class="elementor-row">
+<div class="elementor-element elementor-element-4a1f9cb4 elementor-column elementor-col-33 elementor-top-column" data-id="4a1f9cb4" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-7d4f78b elementor-widget elementor-widget-image" data-id="7d4f78b" data-element_type="widget" data-widget_type="image.default">
+<div class="elementor-widget-container">
+<div class="elementor-image">
+<img src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/logo-white2x.png" class="attachment-large size-large" alt="" srcset="https://blog.zecops.com/wp-content/uploads/2019/01/logo-white@2x.png 320w, https://blog.zecops.com/wp-content/uploads/2019/01/logo-white@2x-300x92.png 300w" sizes="(max-width: 320px) 100vw, 320px" width="320" height="98"> </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="elementor-element elementor-element-287b5a8a elementor-column elementor-col-66 elementor-top-column" data-id="287b5a8a" data-element_type="column">
+<div class="elementor-column-wrap  elementor-element-populated">
+<div class="elementor-widget-wrap">
+<div class="elementor-element elementor-element-6ceb5a9 elementor-shape-square elementor-widget elementor-widget-social-icons" data-id="6ceb5a9" data-element_type="widget" data-widget_type="social-icons.default">
+<div class="elementor-widget-container">
+<div class="elementor-social-icons-wrapper">
+<a class="elementor-icon elementor-social-icon elementor-social-icon-facebook elementor-repeater-item-e48a4dc" href="https://www.facebook.com/zecopsinc/" target="_blank">
+<span class="elementor-screen-only">Facebook</span>
+<i class="fa fa-facebook"></i>
+</a>
+<a class="elementor-icon elementor-social-icon elementor-social-icon-twitter elementor-repeater-item-d97526a" href="https://twitter.com/zecops" target="_blank">
+<span class="elementor-screen-only">Twitter</span>
+<i class="fa fa-twitter"></i>
+</a>
+<a class="elementor-icon elementor-social-icon elementor-social-icon-linkedin elementor-repeater-item-4d44db2" href="https://www.linkedin.com/company/zecops/" target="_blank">
+<span class="elementor-screen-only">Linkedin</span>
+<i class="fa fa-linkedin"></i>
+</a>
+</div>
+</div>
+</div>
+<div class="elementor-element elementor-element-757a6a0 elementor-widget elementor-widget-heading" data-id="757a6a0" data-element_type="widget" data-widget_type="heading.default">
+<div class="elementor-widget-container">
+<p class="elementor-heading-title elementor-size-default">ZecOps © 2020</p> </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</div><iframe src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/portal-v2.html" id="st_gdpr_iframe" title="GDPR Consent Management" style="width: 0px; height: 0px; position: absolute; left: -5000px;"></iframe>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/shCore.js"></script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/shBrushObjC.js"></script>
+<script type="text/javascript">
+	(function(){
+		var corecss = document.createElement('link');
+		var themecss = document.createElement('link');
+		var corecssurl = "https://blog.zecops.com/wp-content/plugins/syntaxhighlighter/syntaxhighlighter3/styles/shCore.css?ver=3.0.9b";
+		if ( corecss.setAttribute ) {
+				corecss.setAttribute( "rel", "stylesheet" );
+				corecss.setAttribute( "type", "text/css" );
+				corecss.setAttribute( "href", corecssurl );
+		} else {
+				corecss.rel = "stylesheet";
+				corecss.href = corecssurl;
+		}
+		document.getElementsByTagName("head")[0].insertBefore( corecss, document.getElementById("syntaxhighlighteranchor") );
+		var themecssurl = "https://blog.zecops.com/wp-content/plugins/syntaxhighlighter/syntaxhighlighter3/styles/shThemeRDark.css?ver=3.0.9b";
+		if ( themecss.setAttribute ) {
+				themecss.setAttribute( "rel", "stylesheet" );
+				themecss.setAttribute( "type", "text/css" );
+				themecss.setAttribute( "href", themecssurl );
+		} else {
+				themecss.rel = "stylesheet";
+				themecss.href = themecssurl;
+		}
+		//document.getElementById("syntaxhighlighteranchor").appendChild(themecss);
+		document.getElementsByTagName("head")[0].insertBefore( themecss, document.getElementById("syntaxhighlighteranchor") );
+	})();
+	SyntaxHighlighter.config.strings.expandSource = '+ expand source';
+	SyntaxHighlighter.config.strings.help = '?';
+	SyntaxHighlighter.config.strings.alert = 'SyntaxHighlighter\n\n';
+	SyntaxHighlighter.config.strings.noBrush = 'Can\'t find brush for: ';
+	SyntaxHighlighter.config.strings.brushNotHtmlScript = 'Brush wasn\'t configured for html-script option: ';
+	SyntaxHighlighter.defaults['auto-links'] = false;
+	SyntaxHighlighter.defaults['class-name'] = 'nice-code-block';
+	SyntaxHighlighter.defaults['pad-line-numbers'] = true;
+	SyntaxHighlighter.defaults['smart-tabs'] = false;
+	SyntaxHighlighter.defaults['toolbar'] = false;
+	SyntaxHighlighter.all();
+
+	// Infinite scroll support
+	if ( typeof( jQuery ) !== 'undefined' ) {
+		jQuery( function( $ ) {
+			$( document.body ).on( 'post-load', function() {
+				SyntaxHighlighter.highlight();
+			} );
+		} );
+	}
+</script>
+<!--[if IE]>
+<script type='text/javascript' src='https://blog.zecops.com/wp-content/themes/astra/assets/js/minified/flexibility.min.js?ver=1.6.4'></script>
+<script type='text/javascript'>
+flexibility(document.documentElement);
+</script>
+<![endif]-->
+<script type="text/javascript">
+/* <![CDATA[ */
+var astra = {"break_point":"921","isRtl":""};
+/* ]]> */
+</script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/style.js"></script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/comment-reply.js"></script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/wp-embed.js"></script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/jquery_003.js"></script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/jquery-migrate.js"></script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/jquery_002.js"></script>
+<script type="text/javascript">
+var $j2 = jQuery.noConflict();
+// $j is now an alias to the jQuery function; creating the new alias is optional.
+ 
+$j2(document).ready(function() {
+  setTimeout(function(){
+    var $ogTitleElem = $j2("meta[property='og:title']");
+    var ogTitle = $ogTitleElem.attr("content");
+    var twitterTitle = $j2("meta[name='twitter:title']").attr("content");
+
+    if(twitterTitle != ogTitle) {
+      $j2(".st-btn[data-network='twitter']").attr("data-title", twitterTitle);
+      $j2(".st-btn[data-network='facebook']").attr("data-title", ogTitle);
+      $j2(".st-btn[data-network='linkedin']").attr("data-title", ogTitle);
+      $ogTitleElem.remove();
+    }
+
+  }, 5000);
+});
+</script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/frontend-modules.js"></script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/jquery.js"></script>
+<script type="text/javascript">
+var ElementorProFrontendConfig = {"ajaxurl":"https:\/\/blog.zecops.com\/wp-admin\/admin-ajax.php","nonce":"140f67079e","i18n":{"toc_no_headings_found":"No headings were found on this page."},"shareButtonsNetworks":{"facebook":{"title":"Facebook","has_counter":true},"twitter":{"title":"Twitter"},"google":{"title":"Google+","has_counter":true},"linkedin":{"title":"LinkedIn","has_counter":true},"pinterest":{"title":"Pinterest","has_counter":true},"reddit":{"title":"Reddit","has_counter":true},"vk":{"title":"VK","has_counter":true},"odnoklassniki":{"title":"OK","has_counter":true},"tumblr":{"title":"Tumblr"},"delicious":{"title":"Delicious"},"digg":{"title":"Digg"},"skype":{"title":"Skype"},"stumbleupon":{"title":"StumbleUpon","has_counter":true},"mix":{"title":"Mix"},"telegram":{"title":"Telegram"},"pocket":{"title":"Pocket","has_counter":true},"xing":{"title":"XING","has_counter":true},"whatsapp":{"title":"WhatsApp"},"email":{"title":"Email"},"print":{"title":"Print"}},"facebook_sdk":{"lang":"en_US","app_id":""}};
+</script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/frontend.js"></script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/position.js"></script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/dialog.js"></script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/waypoints.js"></script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/swiper.js"></script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/share-link.js"></script>
+<script type="text/javascript">
+var elementorFrontendConfig = {"environmentMode":{"edit":false,"wpPreview":false},"i18n":{"shareOnFacebook":"Share on Facebook","shareOnTwitter":"Share on Twitter","pinIt":"Pin it","downloadImage":"Download image"},"is_rtl":false,"breakpoints":{"xs":0,"sm":480,"md":768,"lg":1025,"xl":1440,"xxl":1600},"version":"2.9.11","urls":{"assets":"https:\/\/blog.zecops.com\/wp-content\/plugins\/elementor\/assets\/"},"settings":{"page":[],"general":{"elementor_global_image_lightbox":"yes","elementor_lightbox_enable_counter":"yes","elementor_lightbox_enable_fullscreen":"yes","elementor_lightbox_enable_zoom":"yes","elementor_lightbox_enable_share":"yes","elementor_lightbox_title_src":"title","elementor_lightbox_description_src":"description"},"editorPreferences":[]},"post":{"id":1203,"title":"SMBleedingGhost%20Writeup%20Part%20III%3A%20From%20Remote%20Read%20%28SMBleed%29%20to%20RCE%20-%20ZecOps%20Blog","excerpt":"","featuredImage":"https:\/\/blog.zecops.com\/wp-content\/uploads\/2020\/06\/smbleed-3.jpg"}};
+</script>
+<script type="text/javascript" src="03%20-%20From%20Remote%20Read%20(SMBleed)%20to%20RCE_files/frontend_002.js"></script><span id="elementor-device-mode" class="elementor-screen-only"></span>
+<script type="text/javascript">
+    window._mfq = window._mfq || [];
+    (function() {
+        var mf = document.createElement("script");
+        mf.type = "text/javascript"; mf.defer = true;
+        mf.src = "//cdn.mouseflow.com/projects/ebc65754-14d0-4b0e-bab5-fe23b2d089f0.js";
+        document.getElementsByTagName("head")[0].appendChild(mf);
+    })();
+</script>
+<style>
+  #promoMessage {
+    font-family: "source code pro", monospace;
+    position: fixed;
+    left: 0px;
+    right: 0px;
+    top: 0px;
+    z-index: 9999;
+    display: block;
+    background-color: #009699;
+    text-align: center;
+    color: white;
+    padding: 12px 8px;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  #promoMessage button {
+    color: #009699;
+    background-color: rgba(255, 255, 255, 0.3);
+    border: none;
+    font-size: 16px;
+    margin: 0 8px;
+    float: right;
+    padding: 4px 10px;
+	line-height: 16px;
+  }
+  #promoMessage button:hover {
+    background-color: white;
+  }
+  #promoMessage a:link,
+  #promoMessage a:hover,
+  #promoMessage a:visited {
+    text-decoration: none;
+    color: white;
+    padding-bottom: 1px;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.5);
+  }
+  #promoMessage a:hover {
+    border-bottom-color: white;
+  }
+  @media only screen and (max-width: 572px) {
+    #promoMessage button {
+      display: inline-block;
+      float: none;
+      margin-top: 8px;
+    }
+    #promoMessage {
+      float: left;
+    }
+  }
+</style>
+<div id="promoMessage" style="display: block;">
+<a href="https://zecops.com/solutions/neutrino?utm_source=blog&amp;utm_medium=referral&amp;utm_campaign=detect-with-neutrino-strip" target="_blank" rel="noopener noreferrer">
+<span>Detect Attacks (like SMBleed) with ZecOps Neutrino</span>
+</a>
+<button id="hidePromoMessage">X</button>
+</div>
+<script type="text/javascript">
+    var $j4 = jQuery.noConflict();
+    $j4(document).ready( function() {
+		$j4('#promoMessage').hide().trigger('modified');
+		function setCookie(key, value) {
+			var expDate = new Date();
+			expDate.setTime(expDate.getTime() + (1 * 24 * 60 * 60 * 1000));
+			document.cookie = key + '=' + value + ';expDate=' + expDate.toUTCString();
+		}
+		function getCookie(key) {
+			var keyValue = document.cookie.match('(^|;) ?' + key + '=([^;]*)(;|$)');
+			return keyValue ? keyValue[2] : null;
+		}
+		function handleCookieConsentGiven() {
+			setCookie("blogPromo2513834176315", true);
+		}
+		if (!getCookie("blogPromo2513834176315")) {
+			$j4('#promoMessage').show().trigger('modified');
+		}
+		else {
+			handleCookieConsentGiven();
+		}
+		document.getElementById("hidePromoMessage").addEventListener("click", function() {
+			handleCookieConsentGiven();
+			$j4('#promoMessage').hide().trigger('modified');
+		});
+      
+        $j4('#promoMessage').on('modified', function() {
+          if($j4('#promoMessage').is(":visible") == true) {
+              $j4('body').css('margin-top', $j4('#promoMessage').height()*1.8);
+          } else {
+              $j4('body').css('margin-top', 0);
+          }
+      	});
+      
+        if($j4('#promoMessage').is(":visible") == true) {
+          		if($j4('body').hasClass('postid-1151') || $j4('body').hasClass('postid-1183') || $j4('body').hasClass('postid-1203')) {
+                    $j4('#promoMessage a').attr('href', 'https://zecops.com/solutions/neutrino?utm_source=blog&utm_medium=referral&utm_campaign=detect-with-neutrino-strip');
+                	$j4('#promoMessage span').html('Detect Attacks (like SMBleed)</b> with ZecOps Neutrino');
+                }
+                $j4('body').css('margin-top', $j4('#promoMessage').height()*1.8);
+        }
+      
+	});
+</script>
+
+<script type="text/javascript">
+_linkedin_partner_id = "2060060";
+window._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];
+window._linkedin_data_partner_ids.push(_linkedin_partner_id);
+</script><script type="text/javascript">
+(function(){var s = document.getElementsByTagName("script")[0];
+var b = document.createElement("script");
+b.type = "text/javascript";b.async = true;
+b.src = "https://snap.licdn.com/li.lms-analytics/insight.min.js";
+s.parentNode.insertBefore(b, s);})();
+</script>
+<noscript>
+<img height="1" width="1" style="display:none;" alt="" src="https://px.ads.linkedin.com/collect/?pid=2060060&fmt=gif" />
+</noscript>
+
+
+</body></html>
